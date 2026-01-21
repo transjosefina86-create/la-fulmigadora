@@ -26,14 +26,14 @@
     <script type="text/babel">
         const { useState, useEffect, useRef } = React;
 
-        // --- CONFIGURACIÓN DE FIREBASE (ACTUALIZADA) ---
+        // --- CONFIGURACIÓN ACTUALIZADA PARA LA FULMIGADORA ---
         const firebaseConfig = {
-            apiKey: "AIzaSyBHM08VdTMRh8AUWBHHhW70g6jHBSCgwqE",
-            authDomain: "fulmigadora-ad04b.firebaseapp.com",
-            projectId: "fulmigadora-ad04b",
-            storageBucket: "fulmigadora-ad04b.firebasestorage.app",
-            messagingSenderId: "600241662484",
-            appId: "1:600241662484:web:fe306677d83d405caf1501"
+            apiKey: "AIzaSyC8jIDWwzWFgugZpY8mhOFZEh-ZAUhed7Y",
+            authDomain: "la-fulmigadora.firebaseapp.com",
+            projectId: "la-fulmigadora",
+            storageBucket: "la-fulmigadora.firebasestorage.app",
+            messagingSenderId: "235458080625",
+            appId: "1:235458080625:web:61ea831d6620f1ecde10d0"
         };
 
         // Inicialización
@@ -47,7 +47,7 @@
             const [user, setUser] = useState(null);
             const [db, setDb] = useState(null);
             const [cargandoNube, setCargandoNube] = useState(true);
-            const [appId] = useState('la-josefina-data'); // ID raíz en Firestore
+            const [appId] = useState('la-josefina-data'); 
 
             const [fondoConfig, setFondoConfig] = useState(() => {
                 const saved = localStorage.getItem('josefina_fondo_config');
@@ -194,7 +194,6 @@
                 return Object.values(grupos);
             };
 
-            // VISTA DE BLOQUEO
             if (!autorizado) {
                 return (
                     <div className="relative min-h-screen flex items-center justify-center p-4 bg-slate-900 overflow-hidden">
@@ -216,7 +215,6 @@
                 );
             }
 
-            // VISTA PRINCIPAL
             return (
                 <div className="min-h-screen relative bg-slate-950 text-slate-900 pb-10">
                     {fondoConfig.url && fondoConfig.enPanel && (
@@ -257,7 +255,6 @@
                             </div>
                         </header>
 
-                        {/* CONFIGURACIÓN DE FONDO */}
                         {mostrarConfigFondo && (
                             <div className="mb-6 bg-white/95 backdrop-blur-xl p-6 rounded-3xl shadow-2xl border border-white/50 animate-in fade-in slide-in-from-top-4 duration-300">
                                 <div className="flex justify-between items-center mb-4">
@@ -317,7 +314,6 @@
 
                                     {temporadaActiva === temp.id && (
                                         <div className="p-4 md:p-8 border-t border-slate-100 animate-in slide-in-from-top-2 duration-300">
-                                            {/* FORMULARIO NUEVO TRABAJO */}
                                             <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-2 bg-slate-50 p-4 rounded-2xl mb-6 shadow-inner">
                                                 {['Empresa', 'Campo', 'Lote', 'Chofer'].map(f => (
                                                     <div key={f}>
@@ -348,7 +344,6 @@
                                                 </div>
                                             </div>
 
-                                            {/* FILTROS */}
                                             <div className="flex gap-4 mb-6">
                                                 <div className="relative">
                                                     <Icon name="fas fa-search" className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-300 text-[10px]"/>
@@ -362,7 +357,6 @@
                                                 </div>
                                             </div>
 
-                                            {/* TABLAS AGRUPADAS */}
                                             <div className="space-y-6">
                                                 {obtenerGrupos(temp.trabajos).map((g, idx) => (
                                                     <div key={idx} className="border border-slate-200 rounded-2xl overflow-hidden bg-white shadow-sm hover:shadow-md transition-shadow">
