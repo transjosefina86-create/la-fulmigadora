@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>La Fulmigadora</title>
+</head>
+<body>
+
+    <h1>Panel de Control - La Fulmigadora</h1>
+    <p>Estado: Conectando a Firebase...</p>
+
+    <script type="module">
+      import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+      
+      const firebaseConfig = {
+        apiKey: "AIzaSyC8jIDWwzWFgugZpY8mhOFZEh-ZAUhed7Y",
+        authDomain: "la-fulmigadora.firebaseapp.com",
+        projectId: "la-fulmigadora",
+        storageBucket: "la-fulmigadora.appspot.com",
+        messagingSenderId: "235458080625",
+        appId: "1:235458080625:web:61ea831d6620f1ecde10d0"
+      };
+
+      // Inicializar Firebase
+      const app = initializeApp(firebaseConfig);
+      console.log("Firebase conectado correctamente en La Fulmigadora");
+    </script>
+</body>
+</html>
