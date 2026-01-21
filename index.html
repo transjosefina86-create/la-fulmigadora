@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Transporte La Josefina - Control de Fumigación</title>
+    <title>La Fulmigadora - Control de Gestión</title>
     <script src="https://www.gstatic.com/firebasejs/11.1.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/11.1.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore-compat.js"></script>
@@ -26,7 +26,7 @@
     <script type="text/babel">
         const { useState, useEffect, useRef } = React;
 
-        // --- CONFIGURACIÓN ACTUALIZADA PARA LA FULMIGADORA ---
+        // --- CONFIGURACIÓN DE LA FULMIGADORA (REVISADA) ---
         const firebaseConfig = {
             apiKey: "AIzaSyC8jIDWwzWFgugZpY8mhOFZEh-ZAUhed7Y",
             authDomain: "la-fulmigadora.firebaseapp.com",
@@ -47,10 +47,12 @@
             const [user, setUser] = useState(null);
             const [db, setDb] = useState(null);
             const [cargandoNube, setCargandoNube] = useState(true);
-            const [appId] = useState('la-josefina-data'); 
+            
+            // CORRECCIÓN AQUÍ: Ahora coincide con tu proyecto
+            const [appId] = useState('la-fulmigadora'); 
 
             const [fondoConfig, setFondoConfig] = useState(() => {
-                const saved = localStorage.getItem('josefina_fondo_config');
+                const saved = localStorage.getItem('fulmigadora_fondo_config');
                 return saved ? JSON.parse(saved) : { url: null, enBloqueo: true, enPanel: true };
             });
             const [mostrarConfigFondo, setMostrarConfigFondo] = useState(false);
@@ -67,7 +69,7 @@
             });
 
             useEffect(() => {
-                localStorage.setItem('josefina_fondo_config', JSON.stringify(fondoConfig));
+                localStorage.setItem('fulmigadora_fondo_config', JSON.stringify(fondoConfig));
             }, [fondoConfig]);
 
             // Conexión a Firestore
@@ -85,7 +87,7 @@
                 return () => unsubscribeAuth();
             }, []);
 
-            // Escuchar cambios en tiempo real desde la nube
+            // Escuchar cambios en tiempo real
             useEffect(() => {
                 if (db && user) {
                     const unsubscribe = db.collection('temporadas')
@@ -155,7 +157,6 @@
                 };
 
                 const ref = db.collection('temporadas').doc(temporadaId);
-                const tempActual = temporadas.find(t => t.id === temporadaId);
                 await ref.update({
                     trabajos: firebase.firestore.FieldValue.arrayUnion(registro)
                 });
@@ -204,7 +205,7 @@
                             <div className="bg-orange-600 w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
                                 <Icon name="fas fa-shield-alt" className="text-2xl text-white" />
                             </div>
-                            <h2 className="text-2xl font-black text-white mb-6 uppercase tracking-tighter">La Josefina</h2>
+                            <h2 className="text-2xl font-black text-white mb-6 uppercase tracking-tighter">La Fulmigadora</h2>
                             <form onSubmit={verificarPassword} className="space-y-4">
                                 <input type="password" placeholder="CLAVE" className="w-full p-4 bg-white/10 border border-white/10 rounded-xl text-center text-2xl text-white focus:outline-none focus:ring-2 focus:ring-orange-500"
                                     value={passwordInput} onChange={(e) => setPasswordInput(e.target.value)} autoFocus />
@@ -230,7 +231,7 @@
                                     <Icon name="fas fa-tractor" className="text-xl" />
                                 </div>
                                 <div>
-                                    <h1 className="text-2xl font-black uppercase italic leading-none text-orange-500">La Josefina</h1>
+                                    <h1 className="text-2xl font-black uppercase italic leading-none text-orange-500">La Fulmigadora</h1>
                                     <div className="flex items-center gap-2 mt-1">
                                         <div className={`w-2 h-2 rounded-full ${!cargandoNube ? 'bg-green-500 shadow-[0_0_8px_green]' : 'bg-red-500 animate-pulse'}`}></div>
                                         <span className="text-[10px] font-bold uppercase tracking-widest text-white/60">
@@ -268,9 +269,6 @@
                                             <span className="text-[10px] font-black uppercase text-slate-500">Cargar Imagen Nueva</span>
                                             <input type="file" className="hidden" accept="image/*" onChange={manejarCargaFondo} />
                                         </label>
-                                        {fondoConfig.url && (
-                                            <button onClick={() => setFondoConfig({...fondoConfig, url: null})} className="w-full py-2 text-[10px] font-black uppercase text-red-500 bg-red-50 rounded-xl">Quitar Fondo Actual</button>
-                                        )}
                                     </div>
                                     <div className="flex flex-col justify-center gap-3">
                                         <label className="flex items-center justify-between p-3 bg-slate-50 rounded-xl cursor-pointer">
@@ -283,12 +281,6 @@
                                         </label>
                                     </div>
                                 </div>
-                            </div>
-                        )}
-
-                        {cargandoNube && (
-                            <div className="text-center py-10">
-                                <div className="loading-pulse bg-orange-600/20 text-orange-500 p-4 rounded-full inline-block font-black text-xs uppercase tracking-[0.3em]">Conectando con la nube...</div>
                             </div>
                         )}
 
@@ -313,8 +305,8 @@
                                     </div>
 
                                     {temporadaActiva === temp.id && (
-                                        <div className="p-4 md:p-8 border-t border-slate-100 animate-in slide-in-from-top-2 duration-300">
-                                            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-2 bg-slate-50 p-4 rounded-2xl mb-6 shadow-inner">
+                                        <div className="p-4 md:p-8 border-t border-slate-100">
+                                            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-2 bg-slate-50 p-4 rounded-2xl mb-6 shadow-inner text-slate-900">
                                                 {['Empresa', 'Campo', 'Lote', 'Chofer'].map(f => (
                                                     <div key={f}>
                                                         <label className="text-[8px] font-black text-slate-400 uppercase mb-1 block ml-1">{f}</label>
@@ -345,64 +337,44 @@
                                             </div>
 
                                             <div className="flex gap-4 mb-6">
-                                                <div className="relative">
-                                                    <Icon name="fas fa-search" className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-300 text-[10px]"/>
-                                                    <input type="text" placeholder="Empresa..." className="pl-8 p-2 bg-white border border-slate-200 rounded-lg text-[10px] w-40 font-bold focus:ring-2 focus:ring-orange-500 focus:outline-none"
-                                                        value={filtroGlobal.empresa} onChange={(e) => setFiltroGlobal({...filtroGlobal, empresa: e.target.value})} />
-                                                </div>
-                                                <div className="relative">
-                                                    <Icon name="fas fa-user" className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-300 text-[10px]"/>
-                                                    <input type="text" placeholder="Chofer..." className="pl-8 p-2 bg-white border border-slate-200 rounded-lg text-[10px] w-40 font-bold focus:ring-2 focus:ring-orange-500 focus:outline-none"
-                                                        value={filtroGlobal.chofer} onChange={(e) => setFiltroGlobal({...filtroGlobal, chofer: e.target.value})} />
-                                                </div>
+                                                <input type="text" placeholder="Filtrar Empresa..." className="p-2 bg-white border border-slate-200 rounded-lg text-[10px] w-40 font-bold"
+                                                    value={filtroGlobal.empresa} onChange={(e) => setFiltroGlobal({...filtroGlobal, empresa: e.target.value})} />
+                                                <input type="text" placeholder="Filtrar Chofer..." className="p-2 bg-white border border-slate-200 rounded-lg text-[10px] w-40 font-bold"
+                                                    value={filtroGlobal.chofer} onChange={(e) => setFiltroGlobal({...filtroGlobal, chofer: e.target.value})} />
                                             </div>
 
                                             <div className="space-y-6">
                                                 {obtenerGrupos(temp.trabajos).map((g, idx) => (
-                                                    <div key={idx} className="border border-slate-200 rounded-2xl overflow-hidden bg-white shadow-sm hover:shadow-md transition-shadow">
+                                                    <div key={idx} className="border border-slate-200 rounded-2xl overflow-hidden bg-white shadow-sm">
                                                         <div className="bg-slate-900 p-3 flex justify-between items-center text-white text-[9px] font-black uppercase tracking-widest">
-                                                            <div className="flex items-center gap-2">
-                                                                <Icon name="fas fa-map-pin" className="text-orange-500" />
-                                                                {g.empresa} - {g.campo}
-                                                            </div>
+                                                            <span>{g.empresa} - {g.campo}</span>
                                                             <div className="flex gap-4">
-                                                                <span>Has: {g.has.toLocaleString()}</span>
+                                                                <span>Has: {g.has}</span>
                                                                 <span className="text-orange-400">Total: ${g.total.toLocaleString()}</span>
                                                             </div>
                                                         </div>
                                                         <table className="w-full text-[10px]">
-                                                            <thead className="bg-slate-50 border-b border-slate-100 text-slate-400">
-                                                                <tr>
-                                                                    <th className="p-3 text-left">FECHA</th>
-                                                                    <th className="p-3 text-left">LOTE</th>
-                                                                    <th className="p-3 text-left">CHOFER</th>
-                                                                    <th className="p-3 text-right">TOTAL</th>
-                                                                    <th className="p-3 text-center">COBRADO</th>
-                                                                    <th className="p-3 text-center">PAGADO</th>
-                                                                    <th className="p-3 text-right">ACCIONES</th>
-                                                                </tr>
-                                                            </thead>
                                                             <tbody className="divide-y divide-slate-50">
                                                                 {g.items.map(tr => (
-                                                                    <tr key={tr.id} className="hover:bg-slate-50/50 transition-colors">
+                                                                    <tr key={tr.id} className="hover:bg-slate-50 transition-colors">
                                                                         <td className="p-3 text-slate-400">{tr.fecha}</td>
                                                                         <td className="p-3 font-bold uppercase">{tr.lote}</td>
-                                                                        <td className="p-3"><span className="bg-orange-100 text-orange-700 px-2 py-0.5 rounded font-black">{tr.chofer}</span></td>
+                                                                        <td className="p-3 font-black text-orange-600">{tr.chofer}</td>
                                                                         <td className="p-3 text-right font-black">${tr.totalFinal.toLocaleString()}</td>
                                                                         <td className="p-3 text-center">
                                                                             <button onClick={() => toggleEstado(temp.id, tr.id, 'cobradoAEmpresa')} 
-                                                                                className={`w-6 h-6 rounded-full border transition-all ${tr.cobradoAEmpresa ? 'bg-green-500 border-green-500 text-white shadow-[0_0_8px_rgba(34,197,94,0.4)]' : 'text-slate-200 border-slate-200'}`}>
-                                                                                <Icon name="fas fa-check" className="text-[8px]" />
+                                                                                className={`w-6 h-6 rounded-full border ${tr.cobradoAEmpresa ? 'bg-green-500 border-green-500 text-white' : 'text-slate-200'}`}>
+                                                                                <Icon name="fas fa-check" />
                                                                             </button>
                                                                         </td>
                                                                         <td className="p-3 text-center">
                                                                             <button onClick={() => toggleEstado(temp.id, tr.id, 'pagadoAChofer')} 
-                                                                                className={`w-6 h-6 rounded-full border transition-all ${tr.pagadoAChofer ? 'bg-blue-500 border-blue-500 text-white shadow-[0_0_8px_rgba(59,130,246,0.4)]' : 'text-slate-200 border-slate-200'}`}>
-                                                                                <Icon name="fas fa-check" className="text-[8px]" />
+                                                                                className={`w-6 h-6 rounded-full border ${tr.pagadoAChofer ? 'bg-blue-500 border-blue-500 text-white' : 'text-slate-200'}`}>
+                                                                                <Icon name="fas fa-check" />
                                                                             </button>
                                                                         </td>
                                                                         <td className="p-3 text-right">
-                                                                            <button onClick={() => eliminarTrabajo(temp.id, tr.id)} className="text-slate-300 hover:text-red-500 p-2"><Icon name="fas fa-trash-alt" /></button>
+                                                                            <button onClick={() => eliminarTrabajo(temp.id, tr.id)} className="text-slate-300 hover:text-red-500"><Icon name="fas fa-trash-alt" /></button>
                                                                         </td>
                                                                     </tr>
                                                                 ))}
