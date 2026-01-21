@@ -18,6 +18,7 @@
         body { font-family: 'Inter', sans-serif; }
         .loading-pulse { animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
         @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .5; } }
+        .bg-blur { backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
     </style>
 </head>
 <body>
@@ -26,17 +27,16 @@
     <script type="text/babel">
         const { useState, useEffect, useRef } = React;
 
-        // --- CONFIGURACIÓN DE LA FULMIGADORA (REVISADA) ---
- const firebaseConfig = {
+        // --- CONFIGURACIÓN CORREGIDA CON EL CERO (C0) ---
+        const firebaseConfig = {
             apiKey: "AIzaSyC0jIDWwzWFgugZpY8mhOFZEh-ZAUhed7Y",
             authDomain: "la-fulmigadora.firebaseapp.com",
             projectId: "la-fulmigadora",
-            storageBucket: "la-fulmigadora.firebasestorage.app",
+            storageBucket: "la-fulmigadora.appspot.com",
             messagingSenderId: "235458080625",
             appId: "1:235458080625:web:61ea831d6620f1ecde10d0"
         };
 
-        // Inicialización
         if (!firebase.apps.length) {
             firebase.initializeApp(firebaseConfig);
         }
@@ -47,8 +47,6 @@
             const [user, setUser] = useState(null);
             const [db, setDb] = useState(null);
             const [cargandoNube, setCargandoNube] = useState(true);
-            
-            // CORRECCIÓN AQUÍ: Ahora coincide con tu proyecto
             const [appId] = useState('la-fulmigadora'); 
 
             const [fondoConfig, setFondoConfig] = useState(() => {
@@ -72,7 +70,6 @@
                 localStorage.setItem('fulmigadora_fondo_config', JSON.stringify(fondoConfig));
             }, [fondoConfig]);
 
-            // Conexión a Firestore
             useEffect(() => {
                 const firestore = firebase.firestore();
                 const auth = firebase.auth();
@@ -87,7 +84,6 @@
                 return () => unsubscribeAuth();
             }, []);
 
-            // Escuchar cambios en tiempo real
             useEffect(() => {
                 if (db && user) {
                     const unsubscribe = db.collection('temporadas')
@@ -106,11 +102,7 @@
 
             const verificarPassword = (e) => {
                 e.preventDefault();
-                if (passwordInput === '1986') {
-                    setAutorizado(true);
-                } else {
-                    setPasswordInput('');
-                }
+                if (passwordInput === '1986') { setAutorizado(true); } else { setPasswordInput(''); }
             };
 
             const manejarCargaFondo = (e) => {
@@ -135,13 +127,17 @@
             };
 
             const eliminarTemporada = async (id) => {
+                if(!confirm("¿Eliminar temporada y todos sus datos?")) return;
                 try {
                     await db.collection('temporadas').doc(id).delete();
                 } catch (e) { alert("Error al eliminar"); }
             };
 
             const agregarTrabajo = async (temporadaId) => {
-                if (!nuevoTrabajo.empresa || !nuevoTrabajo.hectareas || !nuevoTrabajo.chofer) return;
+                if (!nuevoTrabajo.empresa || !nuevoTrabajo.hectareas || !nuevoTrabajo.chofer) {
+                    alert("Completar Empresa, Chofer y Hectáreas");
+                    return;
+                }
                 const ha = parseFloat(nuevoTrabajo.hectareas) || 0;
                 const precio = parseFloat(nuevoTrabajo.precioHectarea) || 0;
                 const neto = ha * precio;
@@ -179,6 +175,21 @@
                 await db.collection('temporadas').doc(temporadaId).update({ trabajos: nuevosTrabajos });
             };
 
+            const manejarRemito = (e, temporadaId, trabajoId) => {
+                const file = e.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onloadend = async () => {
+                        const temp = temporadas.find(t => t.id === temporadaId);
+                        const nuevosTrabajos = temp.trabajos.map(tr => 
+                            tr.id === trabajoId ? { ...tr, remito: reader.result } : tr
+                        );
+                        await db.collection('temporadas').doc(temporadaId).update({ trabajos: nuevosTrabajos });
+                    };
+                    reader.readAsDataURL(file);
+                }
+            };
+
             const obtenerGrupos = (trabajos = []) => {
                 const filtrados = trabajos.filter(tr => 
                     tr.empresa.toLowerCase().includes(filtroGlobal.empresa.toLowerCase()) && 
@@ -207,9 +218,9 @@
                             </div>
                             <h2 className="text-2xl font-black text-white mb-6 uppercase tracking-tighter">La Fulmigadora</h2>
                             <form onSubmit={verificarPassword} className="space-y-4">
-                                <input type="password" placeholder="CLAVE" className="w-full p-4 bg-white/10 border border-white/10 rounded-xl text-center text-2xl text-white focus:outline-none focus:ring-2 focus:ring-orange-500"
+                                <input type="password" placeholder="CLAVE" className="w-full p-4 bg-white/10 border border-white/10 rounded-xl text-center text-2xl text-white focus:outline-none focus:ring-2 focus:ring-orange-500 shadow-inner"
                                     value={passwordInput} onChange={(e) => setPasswordInput(e.target.value)} autoFocus />
-                                <button className="w-full bg-orange-600 text-white font-bold py-4 rounded-xl shadow-lg hover:bg-orange-500 transition-colors">ACCEDER</button>
+                                <button className="w-full bg-orange-600 text-white font-bold py-4 rounded-xl shadow-lg hover:bg-orange-500 active:scale-95 transition-all">ACCEDER</button>
                             </form>
                         </div>
                     </div>
@@ -227,7 +238,7 @@
                     <div className="relative z-10 max-w-6xl mx-auto p-4 md:p-6">
                         <header className="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4 bg-white/10 p-6 rounded-3xl border border-white/20 backdrop-blur-xl shadow-2xl text-white">
                             <div className="flex items-center gap-4">
-                                <div className="bg-orange-600 p-3 rounded-2xl shadow-lg">
+                                <div className="bg-orange-600 p-3 rounded-2xl shadow-lg hover:rotate-12 transition-transform">
                                     <Icon name="fas fa-tractor" className="text-xl" />
                                 </div>
                                 <div>
@@ -249,7 +260,7 @@
                                 <div className="flex gap-2 bg-black/40 p-1.5 rounded-xl border border-white/10">
                                     <input type="text" placeholder="Nueva Temporada..." className="px-3 py-2 bg-white/5 text-white rounded-lg font-bold text-xs w-full md:w-40 border-none focus:ring-0 placeholder:text-white/30"
                                         value={nuevaTemporadaNombre} onChange={(e) => setNuevaTemporadaNombre(e.target.value)} />
-                                    <button onClick={agregarTemporada} className="bg-green-600 text-white px-4 py-2 rounded-lg font-black text-xs hover:bg-green-500 transition-all">
+                                    <button onClick={agregarTemporada} className="bg-green-600 text-white px-4 py-2 rounded-lg font-black text-xs hover:bg-green-500 transition-all active:scale-90">
                                         <Icon name="fas fa-plus" />
                                     </button>
                                 </div>
@@ -259,7 +270,7 @@
                         {mostrarConfigFondo && (
                             <div className="mb-6 bg-white/95 backdrop-blur-xl p-6 rounded-3xl shadow-2xl border border-white/50 animate-in fade-in slide-in-from-top-4 duration-300">
                                 <div className="flex justify-between items-center mb-4">
-                                    <h4 className="font-black uppercase italic text-slate-800">Ajustes de Fondo</h4>
+                                    <h4 className="font-black uppercase italic text-slate-800">Ajustes de Fondo de Pantalla</h4>
                                     <button onClick={() => setMostrarConfigFondo(false)} className="text-slate-400 hover:text-slate-600"><Icon name="fas fa-times"/></button>
                                 </div>
                                 <div className="grid md:grid-cols-2 gap-6">
@@ -269,6 +280,9 @@
                                             <span className="text-[10px] font-black uppercase text-slate-500">Cargar Imagen Nueva</span>
                                             <input type="file" className="hidden" accept="image/*" onChange={manejarCargaFondo} />
                                         </label>
+                                        {fondoConfig.url && (
+                                            <button onClick={() => setFondoConfig({...fondoConfig, url: null})} className="w-full py-2 text-[10px] font-black uppercase text-red-500 bg-red-50 rounded-xl">Quitar Fondo Actual</button>
+                                        )}
                                     </div>
                                     <div className="flex flex-col justify-center gap-3">
                                         <label className="flex items-center justify-between p-3 bg-slate-50 rounded-xl cursor-pointer">
@@ -286,100 +300,140 @@
 
                         <div className="space-y-4">
                             {temporadas.map(temp => (
-                                <div key={temp.id} className="bg-white/90 backdrop-blur-xl rounded-[2rem] shadow-xl border border-white/40 overflow-hidden">
+                                <div key={temp.id} className="bg-white/90 backdrop-blur-xl rounded-[2.5rem] shadow-xl border border-white/40 overflow-hidden transition-all duration-300">
                                     <div className={`p-6 flex items-center justify-between cursor-pointer ${temporadaActiva === temp.id ? 'bg-orange-600/5' : ''}`}
                                         onClick={() => setTemporadaActiva(temporadaActiva === temp.id ? null : temp.id)}>
                                         <div className="flex items-center gap-4">
-                                            <div className="w-12 h-12 bg-orange-100 rounded-xl flex items-center justify-center text-orange-600 shadow-inner">
+                                            <div className="w-12 h-12 bg-orange-100 rounded-2xl flex items-center justify-center text-orange-600 shadow-inner">
                                                 <Icon name="fas fa-layer-group" className="text-xl" />
                                             </div>
                                             <div>
                                                 <h3 className="font-black text-xl uppercase tracking-tighter text-slate-800">{temp.nombre}</h3>
-                                                <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">{temp.trabajos?.length || 0} Registros</span>
+                                                <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">{temp.trabajos?.length || 0} Registros totales</span>
                                             </div>
                                         </div>
                                         <div className="flex items-center gap-4">
-                                            <button onClick={(e) => { e.stopPropagation(); if(confirm('¿Borrar temporada completa?')) eliminarTemporada(temp.id); }} className="text-slate-300 hover:text-red-500 transition-colors p-2"><Icon name="fas fa-trash-alt" /></button>
-                                            <Icon name="fas fa-chevron-down" className={`text-slate-400 transition-transform ${temporadaActiva === temp.id ? 'rotate-180' : ''}`} />
+                                            <button onClick={(e) => { e.stopPropagation(); eliminarTemporada(temp.id); }} className="text-slate-300 hover:text-red-500 transition-colors p-2"><Icon name="fas fa-trash-alt" /></button>
+                                            <Icon name="fas fa-chevron-down" className={`text-slate-400 transition-transform duration-300 ${temporadaActiva === temp.id ? 'rotate-180' : ''}`} />
                                         </div>
                                     </div>
 
                                     {temporadaActiva === temp.id && (
-                                        <div className="p-4 md:p-8 border-t border-slate-100">
-                                            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-2 bg-slate-50 p-4 rounded-2xl mb-6 shadow-inner text-slate-900">
+                                        <div className="p-4 md:p-8 border-t border-slate-100 animate-in slide-in-from-top-2 duration-300">
+                                            {/* Formulario de Carga */}
+                                            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-2 bg-slate-50 p-4 rounded-3xl mb-6 shadow-inner">
                                                 {['Empresa', 'Campo', 'Lote', 'Chofer'].map(f => (
                                                     <div key={f}>
                                                         <label className="text-[8px] font-black text-slate-400 uppercase mb-1 block ml-1">{f}</label>
-                                                        <input type="text" className="w-full p-2.5 rounded-lg text-xs font-bold border-none shadow-sm focus:ring-2 focus:ring-orange-500"
+                                                        <input type="text" className="w-full p-2.5 rounded-xl text-xs font-bold border-none shadow-sm focus:ring-2 focus:ring-orange-500"
                                                             value={nuevoTrabajo[f.toLowerCase()]} onChange={(e) => setNuevoTrabajo({...nuevoTrabajo, [f.toLowerCase()]: e.target.value})} />
                                                     </div>
                                                 ))}
                                                 <div>
                                                     <label className="text-[8px] font-black text-slate-400 uppercase mb-1 block ml-1">Has</label>
-                                                    <input type="number" className="w-full p-2.5 rounded-lg text-xs font-bold border-none shadow-sm"
+                                                    <input type="number" className="w-full p-2.5 rounded-xl text-xs font-bold border-none shadow-sm"
                                                         value={nuevoTrabajo.hectareas} onChange={(e) => setNuevoTrabajo({...nuevoTrabajo, hectareas: e.target.value})} />
                                                 </div>
                                                 <div>
-                                                    <label className="text-[8px] font-black text-slate-400 uppercase mb-1 block ml-1">$ c/u</label>
-                                                    <input type="number" className="w-full p-2.5 rounded-lg text-xs font-bold border-none shadow-sm"
+                                                    <label className="text-[8px] font-black text-slate-400 uppercase mb-1 block ml-1">$ x Ha</label>
+                                                    <input type="number" className="w-full p-2.5 rounded-xl text-xs font-bold border-none shadow-sm"
                                                         value={nuevoTrabajo.precioHectarea} onChange={(e) => setNuevoTrabajo({...nuevoTrabajo, precioHectarea: e.target.value})} />
                                                 </div>
                                                 <div>
                                                     <label className="text-[8px] font-black text-blue-500 uppercase mb-1 block ml-1">IVA %</label>
-                                                    <input type="number" className="w-full p-2.5 rounded-lg text-xs font-bold border-none shadow-sm"
+                                                    <input type="number" className="w-full p-2.5 rounded-xl text-xs font-bold border-none shadow-sm bg-blue-50/50"
                                                         value={nuevoTrabajo.ivaPorcentaje} onChange={(e) => setNuevoTrabajo({...nuevoTrabajo, ivaPorcentaje: e.target.value})} />
                                                 </div>
                                                 <div className="flex items-end">
-                                                    <button onClick={() => agregarTrabajo(temp.id)} className="w-full bg-orange-600 text-white h-[38px] rounded-lg font-black text-[10px] uppercase shadow-lg active:scale-95 transition-all">
+                                                    <button onClick={() => agregarTrabajo(temp.id)} className="w-full bg-orange-600 text-white h-[40px] rounded-xl font-black text-[10px] uppercase shadow-lg active:scale-95 hover:bg-orange-500 transition-all">
                                                         GUARDAR
                                                     </button>
                                                 </div>
                                             </div>
 
+                                            {/* Filtros */}
                                             <div className="flex gap-4 mb-6">
-                                                <input type="text" placeholder="Filtrar Empresa..." className="p-2 bg-white border border-slate-200 rounded-lg text-[10px] w-40 font-bold"
-                                                    value={filtroGlobal.empresa} onChange={(e) => setFiltroGlobal({...filtroGlobal, empresa: e.target.value})} />
-                                                <input type="text" placeholder="Filtrar Chofer..." className="p-2 bg-white border border-slate-200 rounded-lg text-[10px] w-40 font-bold"
-                                                    value={filtroGlobal.chofer} onChange={(e) => setFiltroGlobal({...filtroGlobal, chofer: e.target.value})} />
+                                                <div className="relative">
+                                                    <Icon name="fas fa-search" className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-300 text-[10px]"/>
+                                                    <input type="text" placeholder="Filtrar Empresa..." className="pl-8 p-2 bg-white border border-slate-200 rounded-xl text-[10px] w-40 font-bold focus:ring-2 focus:ring-orange-500 focus:outline-none"
+                                                        value={filtroGlobal.empresa} onChange={(e) => setFiltroGlobal({...filtroGlobal, empresa: e.target.value})} />
+                                                </div>
+                                                <div className="relative">
+                                                    <Icon name="fas fa-user" className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-300 text-[10px]"/>
+                                                    <input type="text" placeholder="Filtrar Chofer..." className="pl-8 p-2 bg-white border border-slate-200 rounded-xl text-[10px] w-40 font-bold focus:ring-2 focus:ring-orange-500 focus:outline-none"
+                                                        value={filtroGlobal.chofer} onChange={(e) => setFiltroGlobal({...filtroGlobal, chofer: e.target.value})} />
+                                                </div>
                                             </div>
 
+                                            {/* Listado de Grupos */}
                                             <div className="space-y-6">
                                                 {obtenerGrupos(temp.trabajos).map((g, idx) => (
-                                                    <div key={idx} className="border border-slate-200 rounded-2xl overflow-hidden bg-white shadow-sm">
-                                                        <div className="bg-slate-900 p-3 flex justify-between items-center text-white text-[9px] font-black uppercase tracking-widest">
-                                                            <span>{g.empresa} - {g.campo}</span>
-                                                            <div className="flex gap-4">
-                                                                <span>Has: {g.has}</span>
+                                                    <div key={idx} className="border border-slate-200 rounded-3xl overflow-hidden bg-white shadow-sm hover:shadow-md transition-shadow">
+                                                        <div className="bg-slate-900 p-4 flex justify-between items-center text-white text-[10px] font-black uppercase tracking-widest">
+                                                            <div className="flex items-center gap-2">
+                                                                <Icon name="fas fa-map-pin" className="text-orange-500" />
+                                                                {g.empresa} <span className="text-white/30 px-1">|</span> {g.campo}
+                                                            </div>
+                                                            <div className="flex gap-6">
+                                                                <span>Total Has: {g.has.toLocaleString()}</span>
                                                                 <span className="text-orange-400">Total: ${g.total.toLocaleString()}</span>
                                                             </div>
                                                         </div>
-                                                        <table className="w-full text-[10px]">
-                                                            <tbody className="divide-y divide-slate-50">
-                                                                {g.items.map(tr => (
-                                                                    <tr key={tr.id} className="hover:bg-slate-50 transition-colors">
-                                                                        <td className="p-3 text-slate-400">{tr.fecha}</td>
-                                                                        <td className="p-3 font-bold uppercase">{tr.lote}</td>
-                                                                        <td className="p-3 font-black text-orange-600">{tr.chofer}</td>
-                                                                        <td className="p-3 text-right font-black">${tr.totalFinal.toLocaleString()}</td>
-                                                                        <td className="p-3 text-center">
-                                                                            <button onClick={() => toggleEstado(temp.id, tr.id, 'cobradoAEmpresa')} 
-                                                                                className={`w-6 h-6 rounded-full border ${tr.cobradoAEmpresa ? 'bg-green-500 border-green-500 text-white' : 'text-slate-200'}`}>
-                                                                                <Icon name="fas fa-check" />
-                                                                            </button>
-                                                                        </td>
-                                                                        <td className="p-3 text-center">
-                                                                            <button onClick={() => toggleEstado(temp.id, tr.id, 'pagadoAChofer')} 
-                                                                                className={`w-6 h-6 rounded-full border ${tr.pagadoAChofer ? 'bg-blue-500 border-blue-500 text-white' : 'text-slate-200'}`}>
-                                                                                <Icon name="fas fa-check" />
-                                                                            </button>
-                                                                        </td>
-                                                                        <td className="p-3 text-right">
-                                                                            <button onClick={() => eliminarTrabajo(temp.id, tr.id)} className="text-slate-300 hover:text-red-500"><Icon name="fas fa-trash-alt" /></button>
-                                                                        </td>
+                                                        <div className="overflow-x-auto">
+                                                            <table className="w-full text-[10px]">
+                                                                <thead className="bg-slate-50 border-b border-slate-100 text-slate-400">
+                                                                    <tr>
+                                                                        <th className="p-4 text-left">FECHA</th>
+                                                                        <th className="p-4 text-left">LOTE</th>
+                                                                        <th className="p-4 text-left">CHOFER</th>
+                                                                        <th className="p-4 text-right">IVA</th>
+                                                                        <th className="p-4 text-right">TOTAL FINAL</th>
+                                                                        <th className="p-4 text-center">REMITO</th>
+                                                                        <th className="p-4 text-center">COBRADO</th>
+                                                                        <th className="p-4 text-center">PAGADO</th>
+                                                                        <th className="p-4 text-right">ACCIONES</th>
                                                                     </tr>
-                                                                ))}
-                                                            </tbody>
-                                                        </table>
+                                                                </thead>
+                                                                <tbody className="divide-y divide-slate-50">
+                                                                    {g.items.map(tr => (
+                                                                        <tr key={tr.id} className="hover:bg-slate-50/50 transition-colors">
+                                                                            <td className="p-4 text-slate-400">{tr.fecha}</td>
+                                                                            <td className="p-4 font-bold uppercase">{tr.lote}</td>
+                                                                            <td className="p-4"><span className="bg-orange-100 text-orange-700 px-2 py-1 rounded-lg font-black">{tr.chofer}</span></td>
+                                                                            <td className="p-4 text-right text-blue-500 font-bold">${tr.ivaValor?.toLocaleString() || 0}</td>
+                                                                            <td className="p-4 text-right font-black text-slate-800">${tr.totalFinal.toLocaleString()}</td>
+                                                                            <td className="p-4 text-center">
+                                                                                {tr.remito ? (
+                                                                                    <a href={tr.remito} target="_blank" className="text-orange-500 hover:text-orange-700 text-lg">
+                                                                                        <Icon name="fas fa-file-invoice" />
+                                                                                    </a>
+                                                                                ) : (
+                                                                                    <label className="cursor-pointer text-slate-300 hover:text-orange-500 transition-colors">
+                                                                                        <Icon name="fas fa-camera" className="text-lg" />
+                                                                                        <input type="file" className="hidden" accept="image/*" onChange={(e) => manejarRemito(e, temp.id, tr.id)} />
+                                                                                    </label>
+                                                                                )}
+                                                                            </td>
+                                                                            <td className="p-4 text-center">
+                                                                                <button onClick={() => toggleEstado(temp.id, tr.id, 'cobradoAEmpresa')} 
+                                                                                    className={`w-8 h-8 rounded-full border transition-all flex items-center justify-center ${tr.cobradoAEmpresa ? 'bg-green-500 border-green-500 text-white shadow-lg' : 'text-slate-200 border-slate-200'}`}>
+                                                                                    <Icon name="fas fa-check" className="text-[10px]" />
+                                                                                </button>
+                                                                            </td>
+                                                                            <td className="p-4 text-center">
+                                                                                <button onClick={() => toggleEstado(temp.id, tr.id, 'pagadoAChofer')} 
+                                                                                    className={`w-8 h-8 rounded-full border transition-all flex items-center justify-center ${tr.pagadoAChofer ? 'bg-blue-500 border-blue-500 text-white shadow-lg' : 'text-slate-200 border-slate-200'}`}>
+                                                                                    <Icon name="fas fa-check" className="text-[10px]" />
+                                                                                </button>
+                                                                            </td>
+                                                                            <td className="p-4 text-right">
+                                                                                <button onClick={() => eliminarTrabajo(temp.id, tr.id)} className="text-slate-200 hover:text-red-500 p-2 transition-colors"><Icon name="fas fa-trash-alt" /></button>
+                                                                            </td>
+                                                                        </tr>
+                                                                    ))}
+                                                                </tbody>
+                                                            </table>
+                                                        </div>
                                                     </div>
                                                 ))}
                                             </div>
