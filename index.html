@@ -3,12 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>La Fulmigadora - Sistema Integral de Gestión</title>
+    <title>La Fulmigadora - Sistema de Gestión v3.0</title>
     
     <script src="https://www.gstatic.com/firebasejs/11.1.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/11.1.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore-compat.js"></script>
-    
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -21,7 +20,7 @@
         :root {
             --orange-main: #ea580c;
             --slate-dark: #020617;
-            --glass-bg: rgba(255, 255, 255, 0.03);
+            --glass-base: rgba(255, 255, 255, 0.03);
             --glass-border: rgba(255, 255, 255, 0.08);
         }
 
@@ -30,61 +29,65 @@
             background-color: var(--slate-dark); 
             color: #f8fafc; 
             margin: 0;
-            overflow-x: hidden;
             min-height: 100vh;
         }
 
-        /* Estilos de Cristal y Efectos Visuales que se habían perdido */
-        .glass-panel {
-            background: var(--glass-bg);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
+        .bg-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: -10;
+            background-size: cover;
+            background-position: center;
+            opacity: 0.25;
+        }
+
+        .glass-card {
+            background: var(--glass-base);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
             border: 1px solid var(--glass-border);
+            border-radius: 2rem;
         }
 
-        .shadow-orange-custom {
-            box-shadow: 0 10px 40px -10px rgba(234, 88, 12, 0.3);
+        .input-custom {
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: white;
+            border-radius: 0.75rem;
+            padding: 0.75rem;
+            font-size: 0.875rem;
+            width: 100%;
+            transition: all 0.2s;
         }
 
-        .custom-scrollbar::-webkit-scrollbar {
-            width: 8px;
-            height: 8px;
+        .input-custom:focus {
+            outline: none;
+            border-color: var(--orange-main);
+            box-shadow: 0 0 0 2px rgba(234, 88, 12, 0.2);
         }
 
-        .custom-scrollbar::-webkit-scrollbar-track {
-            background: rgba(255, 255, 255, 0.02);
-        }
-
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 10px;
-        }
-
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+        .btn-primary {
             background: var(--orange-main);
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            transition: all 0.2s;
         }
 
-        .animate-fade-in {
-            animation: fadeIn 0.5s ease-out forwards;
+        .btn-primary:active {
+            transform: scale(0.98);
         }
+
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; }
 
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(10px); }
             to { opacity: 1; transform: translateY(0); }
         }
 
-        .btn-hover-scale {
-            transition: transform 0.2s ease, background-color 0.2s ease;
-        }
-
-        .btn-hover-scale:active {
-            transform: scale(0.95);
-        }
-
-        input[type="number"]::-webkit-outer-spin-button,
-        input[type="number"]::-webkit-inner-spin-button {
-            -webkit-appearance: none;
-            margin: 0;
+        .animate-fade {
+            animation: fadeIn 0.3s ease-out forwards;
         }
     </style>
 </head>
@@ -92,9 +95,8 @@
     <div id="root"></div>
 
     <script type="text/babel">
-        const { useState, useEffect, useRef, useMemo } = React;
+        const { useState, useEffect, useMemo, useRef } = React;
 
-        // CONFIGURACIÓN FIREBASE
         const firebaseConfig = {
             apiKey: "AIzaSyC0jIDWwzWFgugZpY8mhOFZEh-ZAUhed7Y",
             authDomain: "la-fulmigadora.firebaseapp.com",
@@ -109,363 +111,240 @@
         const auth = firebase.auth();
 
         const App = () => {
-            // Estados de Autorización y Carga
             const [autorizado, setAutorizado] = useState(false);
-            const [passwordInput, setPasswordInput] = useState('');
-            const [cargandoNube, setCargandoNube] = useState(true);
-
-            // Estados de Datos
+            const [password, setPassword] = useState('');
             const [temporadas, setTemporadas] = useState([]);
-            const [temporadaActiva, setTemporadaActiva] = useState(null);
-            const [nuevaTempNombre, setNuevaTempNombre] = useState('');
-
-            // Estados de Filtros y Configuración
-            const [filtroEmpresa, setFiltroEmpresa] = useState('');
+            const [tempActiva, setTempActiva] = useState(null);
             const [filtroChofer, setFiltroChofer] = useState('');
-            const [porcentajeChofer, setPorcentajeChofer] = useState(20);
+            const [porcentajesDinamicos, setPorcentajesDinamicos] = useState({});
+            const [fondo, setFondo] = useState(() => JSON.parse(localStorage.getItem('fulmi_bg_v3') || '{"url":null}'));
             
-            // Gestión de Fondo Personalizado
-            const [fondoConfig, setFondoConfig] = useState(() => {
-                const saved = localStorage.getItem('fulmi_config_v2');
-                return saved ? JSON.parse(saved) : { url: null, blur: true, opacity: 0.15 };
+            const [nuevoTr, setNuevoTr] = useState({ 
+                empresa: '', campo: '', lote: '', chofer: '', hectareas: '', precio: '', iva: '0' 
             });
 
-            const [nuevoTrabajo, setNuevoTrabajo] = useState({
-                empresa: '', campo: '', lote: '', chofer: '', 
-                hectareas: '', precioHectarea: '', ivaPorcentaje: '0'
-            });
+            const inputsRef = useRef([]);
 
-            // Persistencia de configuración
-            useEffect(() => {
-                localStorage.setItem('fulmi_config_v2', JSON.stringify(fondoConfig));
-            }, [fondoConfig]);
-
-            // Suscripción a Base de Datos
             useEffect(() => {
                 auth.signInAnonymously().catch(console.error);
-                const unsubscribe = db.collection('temporadas')
-                    .orderBy('fechaCreacion', 'desc')
-                    .onSnapshot(snapshot => {
-                        setTemporadas(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
-                        setCargandoNube(false);
-                    });
-                return () => unsubscribe();
+                const unsub = db.collection('temporadas').orderBy('fechaCreacion', 'desc').onSnapshot(snap => {
+                    setTemporadas(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+                });
+                return () => unsub();
             }, []);
 
-            // MANEJO DE ARCHIVOS Y CÁMARA
-            const manejarCargaFondo = (e) => {
-                const file = e.target.files[0];
-                if (file) {
-                    const reader = new FileReader();
-                    reader.onloadend = () => setFondoConfig({ ...fondoConfig, url: reader.result });
-                    reader.readAsDataURL(file);
+            // NAVEGACIÓN CON ENTER
+            const handleKeyDown = (e, index, tId) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    if (index < 6) {
+                        inputsRef.current[index + 1].focus();
+                    } else {
+                        guardarTr(tId);
+                    }
                 }
             };
 
-            const manejarRemito = (e, tId, trId) => {
-                const file = e.target.files[0];
-                if (file) {
-                    const reader = new FileReader();
-                    reader.onloadend = async () => {
-                        const t = temporadas.find(x => x.id === tId);
-                        const nuevos = t.trabajos.map(tr => 
-                            tr.id === trId ? { ...tr, remito: reader.result } : tr
-                        );
-                        await db.collection('temporadas').doc(tId).update({ trabajos: nuevos });
-                    };
-                    reader.readAsDataURL(file);
-                }
-            };
-
-            // ACCIONES DE BASE DE DATOS
-            const crearTemporada = async () => {
-                if (!nuevaTempNombre.trim()) return;
-                await db.collection('temporadas').add({
-                    nombre: nuevaTempNombre,
-                    trabajos: [],
-                    fechaCreacion: firebase.firestore.FieldValue.serverTimestamp()
-                });
-                setNuevaTempNombre('');
-            };
-
-            const borrarTemporada = async (id) => {
-                if (confirm("¿Borrar temporada completa?")) await db.collection('temporadas').doc(id).delete();
-            };
-
-            const agregarTrabajo = async (tId) => {
-                if (!nuevoTrabajo.empresa || !nuevoTrabajo.chofer || !nuevoTrabajo.hectareas) {
-                    alert("Faltan datos críticos");
-                    return;
-                }
-                const ha = parseFloat(nuevoTrabajo.hectareas);
-                const pr = parseFloat(nuevoTrabajo.precioHectarea || 0);
-                const neto = ha * pr;
-                const ivaVal = neto * (parseFloat(nuevoTrabajo.ivaPorcentaje) / 100);
+            const guardarTr = async (id) => {
+                if (!nuevoTr.chofer || !nuevoTr.precio) return;
+                
+                const esAdelanto = !nuevoTr.empresa && !nuevoTr.campo;
+                const netoVal = esAdelanto ? parseFloat(nuevoTr.precio) : (parseFloat(nuevoTr.hectareas || 0) * parseFloat(nuevoTr.precio || 0));
+                const totalVal = esAdelanto ? netoVal : netoVal * (1 + (parseFloat(nuevoTr.iva || 0) / 100));
 
                 const registro = {
-                    ...nuevoTrabajo,
+                    ...nuevoTr,
                     id: Date.now().toString(),
-                    importeNeto: neto,
-                    ivaValor: ivaVal,
-                    totalFinal: neto + ivaVal,
+                    neto: netoVal,
+                    total: totalVal,
+                    esAdelanto,
                     fecha: new Date().toLocaleDateString(),
                     cobrado: false,
-                    pagadoAChofer: false
+                    pagado: false
                 };
 
-                await db.collection('temporadas').doc(tId).update({
+                await db.collection('temporadas').doc(id).update({
                     trabajos: firebase.firestore.FieldValue.arrayUnion(registro)
                 });
-                setNuevoTrabajo({ ...nuevoTrabajo, lote: '', hectareas: '' });
+
+                setNuevoTr({ empresa: '', campo: '', lote: '', chofer: nuevoTr.chofer, hectareas: '', precio: '', iva: '0' });
+                inputsRef.current[0].focus();
             };
 
-            const toggleEstado = async (tId, trId, campo) => {
-                const t = temporadas.find(x => x.id === tId);
-                const nuevos = t.trabajos.map(tr => tr.id === trId ? { ...tr, [campo]: !tr[campo] } : tr);
-                await db.collection('temporadas').doc(tId).update({ trabajos: nuevos });
-            };
-
-            // LÓGICA DE SALDOS Y CÁLCULOS
-            const saldos = useMemo(() => {
-                if (!temporadaActiva) return null;
-                const t = temporadas.find(x => x.id === temporadaActiva);
+            // MESA DE CÁLCULO DE LIQUIDACIÓN PROFESIONAL
+            const mesaLiquidacion = useMemo(() => {
+                if (!tempActiva || !filtroChofer) return null;
+                const t = temporadas.find(x => x.id === tempActiva);
                 const filtrados = t?.trabajos?.filter(tr => 
-                    tr.empresa.toLowerCase().includes(filtroEmpresa.toLowerCase()) && 
                     tr.chofer.toLowerCase().includes(filtroChofer.toLowerCase())
                 ) || [];
 
-                return {
-                    debeEmpresa: filtrados.filter(tr => !tr.cobrado).reduce((s, c) => s + c.totalFinal, 0),
-                    debeChofer: filtrados.filter(tr => !tr.pagadoAChofer).reduce((s, c) => s + (c.importeNeto * (porcentajeChofer / 100)), 0),
-                    hasTotales: filtrados.reduce((s, c) => s + (parseFloat(c.hectareas) || 0), 0)
-                };
-            }, [temporadas, temporadaActiva, filtroEmpresa, filtroChofer, porcentajeChofer]);
+                const empresas = {};
+                const adelantos = [];
+                
+                filtrados.forEach(tr => {
+                    if (tr.esAdelanto) {
+                        adelantos.push(tr);
+                    } else {
+                        if (!empresas[tr.empresa]) empresas[tr.empresa] = { neto: 0, has: 0 };
+                        empresas[tr.empresa].neto += tr.neto;
+                        empresas[tr.empresa].has += parseFloat(tr.hectareas || 0);
+                    }
+                });
 
-            // VISTA DE ACCESO
+                let totalComisiones = 0;
+                Object.keys(empresas).forEach(emp => {
+                    const p = porcentajesDinamicos[emp] || 0;
+                    totalComisiones += (empresas[emp].neto * (p / 100));
+                });
+
+                const totalAdelantos = adelantos.reduce((s, c) => s + c.neto, 0);
+
+                return { 
+                    empresas, 
+                    adelantos, 
+                    totalComisiones, 
+                    totalAdelantos, 
+                    saldoFinal: totalComisiones - totalAdelantos 
+                };
+            }, [temporadas, tempActiva, filtroChofer, porcentajesDinamicos]);
+
             if (!autorizado) {
                 return (
-                    <div className="h-screen flex items-center justify-center bg-slate-950 p-6">
-                        <div className="glass-panel p-12 rounded-[3.5rem] w-full max-w-sm text-center shadow-2xl animate-fade-in">
-                            <div className="bg-orange-600 w-20 h-20 rounded-3xl flex items-center justify-center mx-auto mb-8 shadow-xl shadow-orange-600/30">
-                                <i className="fas fa-shield-alt text-3xl text-white"></i>
-                            </div>
-                            <h2 className="text-3xl font-black mb-2 uppercase italic tracking-tighter">Acceso</h2>
-                            <p className="text-[10px] font-bold text-orange-500 tracking-[0.3em] uppercase mb-8">La Fulmigadora</p>
-                            <input 
-                                type="password" 
-                                placeholder="CLAVE" 
-                                className="w-full p-5 bg-white/5 border border-white/10 rounded-2xl text-center text-3xl text-white mb-6 focus:outline-none focus:ring-2 focus:ring-orange-600 transition-all"
-                                value={passwordInput}
-                                onChange={e => setPasswordInput(e.target.value)}
-                                onKeyPress={e => e.key === 'Enter' && passwordInput === '1986' && setAutorizado(true)}
-                            />
-                            <button 
-                                onClick={() => passwordInput === '1986' && setAutorizado(true)}
-                                className="w-full bg-orange-600 py-5 rounded-2xl font-black uppercase tracking-widest hover:bg-orange-500 btn-hover-scale"
-                            >
-                                Entrar
-                            </button>
+                    <div className="h-screen flex items-center justify-center bg-slate-950">
+                        <div className="glass-card p-10 w-80 text-center shadow-2xl">
+                            <h2 className="text-2xl font-black mb-6 text-orange-500 italic">LA FULMIGADORA</h2>
+                            <input type="password" placeholder="CLAVE" className="input-custom text-center mb-4" 
+                                   onChange={e => e.target.value === '1986' && setAutorizado(true)} />
+                            <p className="text-[10px] opacity-30 uppercase tracking-widest">Panel de Control</p>
                         </div>
                     </div>
                 );
             }
 
-            // VISTA PRINCIPAL
             return (
-                <div className="min-h-screen relative p-4 md:p-10 pb-32">
-                    {/* Fondo Dinámico con toda su configuración */}
-                    {fondoConfig.url && (
-                        <div className="fixed inset-0 -z-10 bg-cover bg-center transition-opacity duration-1000" 
-                             style={{ backgroundImage: `url(${fondoConfig.url})`, opacity: fondoConfig.opacity }}></div>
-                    )}
+                <div className="min-h-screen p-4 md:p-6 relative">
+                    <div className="bg-overlay" style={{backgroundImage: `url(${fondo.url})`}}></div>
                     
-                    {/* Cabecera Principal */}
-                    <header className="glass-panel p-8 rounded-[3rem] mb-10 flex flex-col lg:flex-row justify-between items-center gap-8 shadow-2xl">
-                        <div className="flex items-center gap-6">
-                            <div className="bg-orange-600 p-5 rounded-[2rem] shadow-lg shadow-orange-600/30 rotate-3">
-                                <i className="fas fa-tractor text-white text-3xl"></i>
-                            </div>
-                            <div>
-                                <h1 className="text-3xl font-black uppercase italic text-orange-500 tracking-tighter leading-none">La Fulmigadora</h1>
-                                <div className="flex items-center gap-2 mt-2">
-                                    <div className="w-2 h-2 rounded-full bg-green-500 shadow-[0_0_8px_#22c55e]"></div>
-                                    <span className="text-[10px] font-black text-white/40 uppercase tracking-widest">Sistema Conectado</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div className="flex flex-wrap gap-4 justify-center items-center">
-                            <label className="bg-white/5 p-4 rounded-2xl cursor-pointer hover:bg-white/10 transicion border border-white/5">
-                                <i className="fas fa-image text-white/50"></i>
-                                <input type="file" className="hidden" accept="image/*" onChange={manejarCargaFondo} />
-                            </label>
-                            <input 
-                                type="text" 
-                                placeholder="Nueva Temporada..." 
-                                className="bg-black/40 px-6 py-3 rounded-2xl text-sm font-bold border border-white/10 outline-none focus:border-orange-600"
-                                value={nuevaTempNombre}
-                                onChange={e => setNuevaTempNombre(e.target.value)}
-                            />
-                            <button onClick={crearTemporada} className="bg-green-600 p-4 rounded-2xl font-black hover:bg-green-500 btn-hover-scale">
-                                <i className="fas fa-plus"></i>
-                            </button>
+                    <header className="glass-card p-6 mb-6 flex flex-col md:flex-row justify-between items-center gap-4">
+                        <h1 className="text-xl font-black text-orange-500 italic uppercase">Gestión de Choferes</h1>
+                        <div className="w-full md:w-72">
+                            <input type="text" placeholder="🔍 Buscar Chofer para Liquidar..." 
+                                   className="input-custom border-orange-500/30"
+                                   onChange={e => setFiltroChofer(e.target.value)} />
                         </div>
                     </header>
 
-                    {/* Filtros y Liquidación */}
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-10">
-                        <div className="relative group">
-                            <i className="fas fa-search absolute left-6 top-1/2 -translate-y-1/2 text-white/20 group-focus-within:text-orange-500"></i>
-                            <input 
-                                type="text" 
-                                placeholder="Empresa..." 
-                                className="w-full p-6 pl-14 glass-panel rounded-[2rem] font-bold outline-none focus:border-orange-500 transition-all"
-                                onChange={e => setFiltroEmpresa(e.target.value)}
-                            />
-                        </div>
-                        <div className="relative group">
-                            <i className="fas fa-user absolute left-6 top-1/2 -translate-y-1/2 text-white/20 group-focus-within:text-orange-500"></i>
-                            <input 
-                                type="text" 
-                                placeholder="Chofer..." 
-                                className="w-full p-6 pl-14 glass-panel rounded-[2rem] font-bold outline-none focus:border-orange-500 transition-all"
-                                onChange={e => setFiltroChofer(e.target.value)}
-                            />
-                        </div>
-                        <div className="md:col-span-2 flex items-center justify-between bg-orange-600 p-6 rounded-[2.5rem] shadow-xl shadow-orange-900/40">
-                            <div className="flex items-center gap-4">
-                                <div className="bg-white/20 p-4 rounded-2xl"><i className="fas fa-percent text-white"></i></div>
-                                <span className="font-black text-[11px] uppercase tracking-widest">Comisión Chofer:</span>
+                    {/* MESA DE CÁLCULO DINÁMICA */}
+                    {mesaLiquidacion && filtroChofer && (
+                        <div className="glass-card p-8 mb-8 border-orange-500/40 animate-fade">
+                            <div className="flex items-center gap-3 mb-6">
+                                <i className="fas fa-file-invoice-dollar text-orange-500 text-2xl"></i>
+                                <h2 className="text-lg font-black uppercase">Liquidación: {filtroChofer}</h2>
                             </div>
-                            <div className="flex items-center gap-4 bg-black/20 p-3 rounded-2xl">
-                                <input 
-                                    type="number" 
-                                    className="bg-transparent w-16 text-center text-2xl font-black outline-none" 
-                                    value={porcentajeChofer} 
-                                    onChange={e => setPorcentajeChofer(e.target.value)}
-                                />
-                                <span className="font-black text-white/40">%</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* RECUADROS DE SALDOS DINÁMICOS */}
-                    {saldos && (
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10 animate-fade-in">
-                            <div className="glass-panel p-8 rounded-[2.5rem] border-l-[12px] border-red-500">
-                                <p className="text-[11px] font-black uppercase text-white/30 mb-2 tracking-widest italic">Pendiente de Empresa</p>
-                                <p className="text-4xl font-black text-red-500">${saldos.debeEmpresa.toLocaleString()}</p>
-                            </div>
-                            <div className="glass-panel p-8 rounded-[2.5rem] border-l-[12px] border-blue-500">
-                                <p className="text-[11px] font-black uppercase text-white/30 mb-2 tracking-widest italic">Pendiente al Chofer</p>
-                                <p className="text-4xl font-black text-blue-500">${saldos.debeChofer.toLocaleString()}</p>
-                            </div>
-                            <div className="glass-panel p-8 rounded-[2.5rem] border-l-[12px] border-orange-500">
-                                <p className="text-[11px] font-black uppercase text-white/30 mb-2 tracking-widest italic">Hectáreas Totales</p>
-                                <p className="text-4xl font-black text-orange-500">{saldos.hasTotales.toLocaleString()} <span className="text-lg">Has</span></p>
+                            
+                            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                                <div className="lg:col-span-2 space-y-3">
+                                    <p className="text-[10px] font-black opacity-40 uppercase mb-2">Desglose por Empresa:</p>
+                                    {Object.keys(mesaLiquidacion.empresas).map(emp => (
+                                        <div key={emp} className="bg-white/5 p-4 rounded-2xl flex justify-between items-center border border-white/5">
+                                            <div>
+                                                <p className="font-black text-orange-500 uppercase">{emp}</p>
+                                                <p className="text-xs opacity-60">{mesaLiquidacion.empresas[emp].has} Hectáreas Totales</p>
+                                            </div>
+                                            <div className="flex items-center gap-4">
+                                                <div className="text-right">
+                                                    <p className="text-[10px] opacity-40">NETO</p>
+                                                    <p className="font-bold">${mesaLiquidacion.empresas[emp].neto.toLocaleString()}</p>
+                                                </div>
+                                                <div className="flex items-center bg-orange-600/20 px-3 py-2 rounded-xl border border-orange-500/30">
+                                                    <input type="number" className="bg-transparent w-8 text-center font-black text-orange-500 outline-none" 
+                                                           placeholder="0" value={porcentajesDinamicos[emp] || ''} 
+                                                           onChange={e => setPorcentajesDinamicos({...porcentajesDinamicos, [emp]: e.target.value})} />
+                                                    <span className="text-[10px] font-black text-orange-500">%</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                                
+                                <div className="bg-black/40 p-6 rounded-[2rem] border border-white/5 flex flex-col justify-between">
+                                    <div className="space-y-4">
+                                        <div className="flex justify-between text-sm">
+                                            <span className="opacity-50">Subtotal Comisión:</span>
+                                            <span className="font-black text-green-400">${mesaLiquidacion.totalComisiones.toLocaleString()}</span>
+                                        </div>
+                                        <div className="flex justify-between text-sm">
+                                            <span className="opacity-50">Adelantos:</span>
+                                            <span className="font-black text-red-400">-${mesaLiquidacion.totalAdelantos.toLocaleString()}</span>
+                                        </div>
+                                    </div>
+                                    <div className="mt-8 pt-4 border-t border-white/10 text-right">
+                                        <p className="text-[10px] font-black opacity-40 uppercase">Saldo a Pagar</p>
+                                        <p className="text-3xl font-black text-white">${mesaLiquidacion.saldoFinal.toLocaleString()}</p>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     )}
 
-                    {/* Listado de Temporadas */}
-                    <div className="space-y-8">
+                    <div className="space-y-6">
                         {temporadas.map(t => (
-                            <div key={t.id} className="glass-panel rounded-[3.5rem] overflow-hidden shadow-2xl animate-fade-in">
-                                <div className={`p-10 flex justify-between items-center cursor-pointer hover:bg-white/5 transicion ${temporadaActiva === t.id ? 'bg-white/5' : ''}`}
-                                     onClick={() => setTemporadaActiva(temporadaActiva === t.id ? null : t.id)}>
-                                    <div className="flex items-center gap-6">
-                                        <div className={`w-16 h-16 rounded-[1.8rem] flex items-center justify-center border transition-all ${temporadaActiva === t.id ? 'bg-orange-600 border-orange-400' : 'bg-white/5 border-white/10'}`}>
-                                            <i className={`fas fa-folder-open text-2xl ${temporadaActiva === t.id ? 'text-white' : 'text-white/20'}`}></i>
-                                        </div>
-                                        <h3 className="text-2xl font-black uppercase italic tracking-tighter">{t.nombre}</h3>
-                                    </div>
-                                    <div className="flex items-center gap-8">
-                                        <button onClick={(e) => {e.stopPropagation(); borrarTemporada(t.id)}} className="text-white/10 hover:text-red-500 transicion"><i className="fas fa-trash-alt"></i></button>
-                                        <i className={`fas fa-chevron-down text-2xl transition-transform duration-500 ${temporadaActiva === t.id ? 'rotate-180 text-orange-500' : 'text-white/10'}`}></i>
-                                    </div>
+                            <div key={t.id} className="glass-card overflow-hidden">
+                                <div className="p-6 flex justify-between items-center cursor-pointer hover:bg-white/5" 
+                                     onClick={() => setTempActiva(tempActiva === t.id ? null : t.id)}>
+                                    <span className="font-black uppercase tracking-widest">{t.nombre}</span>
+                                    <i className={`fas fa-chevron-${tempActiva === t.id ? 'up text-orange-500' : 'down opacity-20'}`}></i>
                                 </div>
 
-                                {temporadaActiva === t.id && (
-                                    <div className="p-8 md:p-12 border-t border-white/5 space-y-12">
-                                        
-                                        {/* FORMULARIO DE CARGA EXTENDIDO */}
-                                        <div className="bg-black/30 p-10 rounded-[3rem] border border-white/5 shadow-inner">
-                                            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4">
-                                                <input type="text" placeholder="Empresa" className="p-5 rounded-2xl text-black font-black text-sm" value={nuevoTrabajo.empresa} onChange={e=>setNuevoTrabajo({...nuevoTrabajo, empresa: e.target.value})} />
-                                                <input type="text" placeholder="Campo" className="p-5 rounded-2xl text-black font-black text-sm" value={nuevoTrabajo.campo} onChange={e=>setNuevoTrabajo({...nuevoTrabajo, campo: e.target.value})} />
-                                                <input type="text" placeholder="Lotes (Ej: 1, 2, 5)" className="p-5 rounded-2xl text-black font-black text-sm lg:col-span-2" value={nuevoTrabajo.lote} onChange={e=>setNuevoTrabajo({...nuevoTrabajo, lote: e.target.value})} />
-                                                <input type="text" placeholder="Chofer" className="p-5 rounded-2xl text-black font-black text-sm" value={nuevoTrabajo.chofer} onChange={e=>setNuevoTrabajo({...nuevoTrabajo, chofer: e.target.value})} />
-                                                <input type="number" placeholder="Has" className="p-5 rounded-2xl text-black font-black text-sm" value={nuevoTrabajo.hectareas} onChange={e=>setNuevoTrabajo({...nuevoTrabajo, hectareas: e.target.value})} />
-                                                <input type="number" placeholder="$ x Ha" className="p-5 rounded-2xl text-black font-black text-sm" value={nuevoTrabajo.precioHectarea} onChange={e=>setNuevoTrabajo({...nuevoTrabajo, precioHectarea: e.target.value})} />
-                                                <div className="lg:col-span-7 flex justify-end">
-                                                    <button onClick={() => agregarTrabajo(t.id)} className="bg-orange-600 px-12 py-5 rounded-2xl font-black uppercase tracking-widest hover:bg-orange-500 shadow-lg shadow-orange-900/40 btn-hover-scale">Guardar Registro</button>
-                                                </div>
-                                            </div>
+                                {tempActiva === t.id && (
+                                    <div className="p-6 space-y-6 bg-black/20">
+                                        {/* FORMULARIO */}
+                                        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3">
+                                            <input ref={el => inputsRef.current[0] = el} type="text" placeholder="Empresa" className="input-custom" value={nuevoTr.empresa} onChange={e=>setNuevoTr({...nuevoTr, empresa:e.target.value})} onKeyDown={e=>handleKeyDown(e, 0, t.id)} />
+                                            <input ref={el => inputsRef.current[1] = el} type="text" placeholder="Campo" className="input-custom" value={nuevoTr.campo} onChange={e=>setNuevoTr({...nuevoTr, campo:e.target.value})} onKeyDown={e=>handleKeyDown(e, 1, t.id)} />
+                                            <input ref={el => inputsRef.current[2] = el} type="text" placeholder="Lote" className="input-custom" value={nuevoTr.lote} onChange={e=>setNuevoTr({...nuevoTr, lote:e.target.value})} onKeyDown={e=>handleKeyDown(e, 2, t.id)} />
+                                            <input ref={el => inputsRef.current[3] = el} type="text" placeholder="Chofer" className="input-custom" value={nuevoTr.chofer} onChange={e=>setNuevoTr({...nuevoTr, chofer:e.target.value})} onKeyDown={e=>handleKeyDown(e, 3, t.id)} />
+                                            <input ref={el => inputsRef.current[4] = el} type="number" placeholder="Has" className="input-custom" value={nuevoTr.hectareas} onChange={e=>setNuevoTr({...nuevoTr, hectareas:e.target.value})} onKeyDown={e=>handleKeyDown(e, 4, t.id)} />
+                                            <input ref={el => inputsRef.current[5] = el} type="number" placeholder="$ Neto/Adelanto" className="input-custom" value={nuevoTr.precio} onChange={e=>setNuevoTr({...nuevoTr, precio:e.target.value})} onKeyDown={e=>handleKeyDown(e, 5, t.id)} />
+                                            <input ref={el => inputsRef.current[6] = el} type="number" placeholder="IVA %" className="input-custom" value={nuevoTr.iva} onChange={e=>setNuevoTr({...nuevoTr, iva:e.target.value})} onKeyDown={e=>handleKeyDown(e, 6, t.id)} />
+                                            <button onClick={()=>guardarTr(t.id)} className="btn-primary p-3 rounded-xl lg:col-span-7">Guardar Registro</button>
                                         </div>
 
-                                        {/* TABLA DE REGISTROS CON TODAS LAS FUNCIONES */}
+                                        {/* TABLA */}
                                         <div className="overflow-x-auto custom-scrollbar">
-                                            <table className="w-full text-left border-separate border-spacing-y-4">
-                                                <thead className="text-[11px] font-black uppercase text-white/20 tracking-[0.2em]">
+                                            <table className="w-full text-xs text-left border-separate border-spacing-y-2">
+                                                <thead className="opacity-30 uppercase text-[10px] font-black">
                                                     <tr>
-                                                        <th className="px-8 py-2">Ubicación y Lotes</th>
-                                                        <th className="px-8 py-2">Chofer</th>
-                                                        <th className="px-8 py-2 text-right">Superficie</th>
-                                                        <th className="px-8 py-2 text-right">Finanzas</th>
-                                                        <th className="px-8 py-2 text-center">Remito</th>
-                                                        <th className="px-8 py-2 text-center">Cobro Emp.</th>
-                                                        <th className="px-8 py-2 text-center">Pago Cho.</th>
-                                                        <th className="px-8 py-2"></th>
+                                                        <th className="px-4">Detalle</th>
+                                                        <th className="px-4 text-right">Importe Neto</th>
+                                                        <th className="px-4 text-center">Estado</th>
+                                                        <th className="px-4"></th>
                                                     </tr>
                                                 </thead>
                                                 <tbody>
-                                                    {t.trabajos?.filter(x => x.empresa.toLowerCase().includes(filtroEmpresa.toLowerCase()) && x.chofer.toLowerCase().includes(filtroChofer.toLowerCase())).map(tr => (
-                                                        <tr key={tr.id} className="glass-panel hover:bg-white/5 transicion group shadow-xl">
-                                                            <td className="px-8 py-6 rounded-l-[2.5rem]">
-                                                                <div className="font-black text-orange-500 uppercase text-lg leading-none mb-1">{tr.empresa}</div>
-                                                                <div className="text-xs font-bold text-white/60 mb-1">{tr.campo}</div>
-                                                                <div className="text-[10px] bg-white/5 px-3 py-1 rounded-full border border-white/5 inline-block italic text-white/40">Lotes: {tr.lote}</div>
+                                                    {t.trabajos?.filter(x => x.chofer.toLowerCase().includes(filtroChofer.toLowerCase())).map(tr => (
+                                                        <tr key={tr.id} className={`glass-card ${tr.esAdelanto ? 'bg-yellow-500/5' : ''}`}>
+                                                            <td className="p-4 rounded-l-2xl">
+                                                                <div className="font-black uppercase tracking-tighter">
+                                                                    {tr.esAdelanto ? <span className="text-yellow-500">Adelanto Chofer</span> : <span className="text-orange-500">{tr.empresa} - {tr.lote}</span>}
+                                                                </div>
+                                                                <div className="text-[10px] opacity-40 uppercase">{tr.fecha} | {tr.chofer}</div>
                                                             </td>
-                                                            <td className="px-8 py-6">
-                                                                <div className="font-black uppercase text-white/80">{tr.chofer}</div>
-                                                                <div className="text-[9px] font-bold text-white/20 uppercase tracking-widest">{tr.fecha}</div>
+                                                            <td className="p-4 text-right font-black">
+                                                                ${tr.neto.toLocaleString()}
                                                             </td>
-                                                            <td className="px-8 py-6 text-right font-black text-2xl tracking-tighter">
-                                                                {tr.hectareas} <span className="text-xs text-white/20">Has</span>
+                                                            <td className="p-4 text-center">
+                                                                <div className="flex justify-center gap-2">
+                                                                    <button className={`w-8 h-8 rounded-lg border ${tr.cobrado ? 'bg-green-600' : 'opacity-10'}`}><i className="fas fa-check"></i></button>
+                                                                    <button className={`w-8 h-8 rounded-lg border ${tr.pagado ? 'bg-blue-600' : 'opacity-10'}`}><i className="fas fa-check"></i></button>
+                                                                </div>
                                                             </td>
-                                                            <td className="px-8 py-6 text-right">
-                                                                <div className="font-black text-white text-lg">${tr.totalFinal.toLocaleString()}</div>
-                                                                <div className="text-[10px] text-blue-400 font-bold italic tracking-tighter">Neto: ${tr.importeNeto.toLocaleString()}</div>
-                                                            </td>
-                                                            <td className="px-8 py-6 text-center">
-                                                                {tr.remito ? (
-                                                                    <a href={tr.remito} target="_blank" className="bg-orange-600/20 text-orange-500 p-4 rounded-2xl hover:bg-orange-600 hover:text-white transicion inline-block shadow-lg">
-                                                                        <i className="fas fa-file-invoice text-xl"></i>
-                                                                    </a>
-                                                                ) : (
-                                                                    <label className="cursor-pointer text-white/10 hover:text-orange-500 transicion p-4 inline-block">
-                                                                        <i className="fas fa-camera text-3xl"></i>
-                                                                        <input type="file" className="hidden" accept="image/*" onChange={e => manejarRemito(e, t.id, tr.id)} />
-                                                                    </label>
-                                                                )}
-                                                            </td>
-                                                            <td className="px-8 py-6 text-center">
-                                                                <button onClick={() => toggleEstado(t.id, tr.id, 'cobrado')} 
-                                                                    className={`w-14 h-14 rounded-2xl border-2 transicion flex items-center justify-center mx-auto ${tr.cobrado ? 'bg-green-600 border-green-400 text-white shadow-[0_0_20px_rgba(34,197,94,0.3)]' : 'border-white/10 text-white/5 hover:border-white/20'}`}>
-                                                                    <i className="fas fa-check text-xl"></i>
-                                                                </button>
-                                                            </td>
-                                                            <td className="px-8 py-6 text-center">
-                                                                <button onClick={() => toggleEstado(t.id, tr.id, 'pagadoAChofer')} 
-                                                                    className={`w-14 h-14 rounded-2xl border-2 transicion flex items-center justify-center mx-auto ${tr.pagadoAChofer ? 'bg-blue-600 border-blue-400 text-white shadow-[0_0_20px_rgba(37,99,235,0.3)]' : 'border-white/10 text-white/5 hover:border-white/20'}`}>
-                                                                    <i className="fas fa-check text-xl"></i>
-                                                                </button>
-                                                            </td>
-                                                            <td className="px-8 py-6 rounded-r-[2.5rem] text-right">
-                                                                <button onClick={async() => { if(confirm('¿Borrar?')) { 
-                                                                    const n = t.trabajos.filter(x => x.id !== tr.id); 
-                                                                    await db.collection('temporadas').doc(t.id).update({ trabajos: n }); 
-                                                                }}} className="text-white/5 hover:text-red-500 opacity-0 group-hover:opacity-100 transicion p-3"><i className="fas fa-trash-alt"></i></button>
+                                                            <td className="p-4 rounded-r-2xl text-right">
+                                                                <button onClick={async() => {
+                                                                    const n = t.trabajos.filter(x => x.id !== tr.id);
+                                                                    await db.collection('temporadas').doc(t.id).update({ trabajos: n });
+                                                                }} className="text-white/5 hover:text-red-500"><i className="fas fa-trash"></i></button>
                                                             </td>
                                                         </tr>
                                                     ))}
@@ -481,8 +360,8 @@
             );
         };
 
-        const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(<App />);
+            const root = ReactDOM.createRoot(document.getElementById('root'));
+            root.render(<App />);
     </script>
 </body>
 </html>
