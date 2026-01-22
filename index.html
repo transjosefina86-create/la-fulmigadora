@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>La Fulmigadora - Gestión Profesional v4.0</title>
+    <title>La Fulmigadora - Sistema de Gestión v4.5 PROFESIONAL</title>
     
     <script src="https://www.gstatic.com/firebasejs/11.1.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/11.1.0/firebase-auth-compat.js"></script>
@@ -18,86 +18,86 @@
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;900&display=swap');
         
         :root {
-            --naranja: #ea580c;
-            --oscuro: #020617;
-            --cristal: rgba(255, 255, 255, 0.04);
-            --borde: rgba(255, 255, 255, 0.1);
+            --naranja-fulmi: #ea580c;
+            --fondo-oscuro: #020617;
+            --cristal-bg: rgba(255, 255, 255, 0.03);
+            --cristal-borde: rgba(255, 255, 255, 0.1);
         }
 
         body { 
             font-family: 'Inter', sans-serif; 
-            background-color: var(--oscuro); 
-            color: #f1f5f9; 
+            background-color: var(--fondo-oscuro); 
+            color: #f8fafc; 
             margin: 0; 
             min-height: 100vh;
-            overflow-x: hidden;
         }
 
-        /* FONDO DINÁMICO */
-        .fondo-sistema {
+        /* FONDO DE PANTALLA PERSISTENTE */
+        .fondo-dinamico {
             position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
+            inset: 0;
             z-index: -10;
             background-size: cover;
             background-position: center;
-            transition: opacity 0.8s ease;
+            transition: all 0.5s ease-in-out;
         }
 
-        /* TARJETAS ESTILO CRISTAL */
-        .card-cristal {
-            background: var(--cristal);
-            backdrop-filter: blur(25px);
-            -webkit-backdrop-filter: blur(25px);
-            border: 1px solid var(--borde);
-            border-radius: 2.5rem;
-            box-shadow: 0 15px 35px rgba(0,0,0,0.4);
+        /* DISEÑO DE TARJETAS DE CRISTAL */
+        .glass-panel {
+            background: var(--cristal-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--cristal-borde);
+            border-radius: 2rem;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.3);
         }
 
-        /* INPUTS PERSONALIZADOS */
-        .input-fulmi {
-            background: rgba(0, 0, 0, 0.6);
+        /* INPUTS ESTILIZADOS */
+        .input-global {
+            background: rgba(0, 0, 0, 0.5);
             border: 1px solid rgba(255, 255, 255, 0.1);
-            color: white;
-            border-radius: 1.2rem;
-            padding: 1rem;
+            color: #fff;
+            border-radius: 0.8rem;
+            padding: 0.75rem;
+            font-size: 0.85rem;
             font-weight: 600;
-            font-size: 0.9rem;
             width: 100%;
             outline: none;
-            transition: all 0.3s;
+            transition: border-color 0.3s;
         }
 
-        .input-fulmi:focus {
-            border-color: var(--naranja);
-            box-shadow: 0 0 20px rgba(234, 88, 12, 0.25);
+        .input-global:focus {
+            border-color: var(--naranja-fulmi);
+            box-shadow: 0 0 10px rgba(234, 88, 12, 0.2);
         }
 
-        /* BOTONES */
-        .btn-principal {
-            background: var(--naranja);
+        /* BOTÓN PRINCIPAL */
+        .btn-accion {
+            background: var(--naranja-fulmi);
             color: white;
             font-weight: 900;
             text-transform: uppercase;
-            padding: 1.2rem;
-            border-radius: 1.5rem;
-            box-shadow: 0 8px 20px rgba(234, 88, 12, 0.3);
-            transition: all 0.2s;
+            padding: 1rem;
+            border-radius: 1rem;
+            box-shadow: 0 4px 15px rgba(234, 88, 12, 0.3);
+            cursor: pointer;
+            transition: transform 0.2s;
         }
 
-        .btn-principal:active { transform: scale(0.96); }
+        .btn-accion:active { transform: scale(0.97); }
 
-        /* SCROLL */
-        .custom-scroll::-webkit-scrollbar { width: 6px; height: 6px; }
-        .custom-scroll::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 10px; }
+        /* TABLAS Y SCROLL */
+        .scroll-custom::-webkit-scrollbar { width: 4px; height: 4px; }
+        .scroll-custom::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; }
 
-        @keyframes slideIn {
-            from { opacity: 0; transform: translateY(20px); }
+        .animar-entrada {
+            animation: fadeIn 0.5s ease-out forwards;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
             to { opacity: 1; transform: translateY(0); }
         }
-        .animar { animation: slideIn 0.4s ease-out forwards; }
     </style>
 </head>
 <body>
@@ -106,7 +106,8 @@
     <script type="text/babel">
         const { useState, useEffect, useMemo, useRef } = React;
 
-        const firebaseConfig = {
+        // CONFIGURACIÓN DE FIREBASE
+        const fbConfig = {
             apiKey: "AIzaSyC0jIDWwzWFgugZpY8mhOFZEh-ZAUhed7Y",
             authDomain: "la-fulmigadora.firebaseapp.com",
             projectId: "la-fulmigadora",
@@ -115,78 +116,128 @@
             appId: "1:235458080625:web:61ea831d6620f1ecde10d0"
         };
 
-        if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+        if (!firebase.apps.length) firebase.initializeApp(fbConfig);
         const db = firebase.firestore();
         const auth = firebase.auth();
 
-        const AppLaFulmigadora = () => {
-            const [acceso, setAcceso] = useState(false);
-            const [temporadas, setTemporadas] = useState([]);
-            const [idActiva, setIdActiva] = useState(null);
-            const [filtro, setFiltro] = useState('');
-            const [pcts, setPcts] = useState({});
-            const [verConfig, setVerConfig] = useState(false);
-            const [bg, setBg] = useState(() => JSON.parse(localStorage.getItem('fulmi_config_v4') || '{"url":"https://images.unsplash.com/photo-1516975080664-ed2fc6a32937?q=80&w=2070", "op":0.25}'));
-            const [form, setForm] = useState({ empresa: '', campo: '', lote: '', chofer: '', has: '', precio: '', iva: '0' });
+        const AppFulmigadora = () => {
+            // ESTADOS DE SESIÓN Y DATOS
+            const [login, setLogin] = useState(false);
+            const [dataTemporadas, setDataTemporadas] = useState([]);
+            const [idSeleccionada, setIdSeleccionada] = useState(null);
+            const [busqueda, setBusqueda] = useState('');
+            const [comisiones, setComisiones] = useState({});
+            const [mostrarConfig, setMostrarConfig] = useState(false);
+            
+            // ESTADO DE FONDO Y DISEÑO
+            const [uiConfig, setUiConfig] = useState(() => JSON.parse(localStorage.getItem('fulmi_ui_v45') || '{"url":"https://images.unsplash.com/photo-1473448912268-2022ce9509d8?q=80&w=2041", "op":0.25}'));
 
-            const inputsRef = useRef([]);
+            // ESTADO DE FORMULARIO DE 7 CAMPOS
+            const [nuevoReg, setNuevoReg] = useState({ 
+                empresa: '', campo: '', lote: '', chofer: '', has: '', precio: '', iva: '0' 
+            });
 
+            const refsFoco = useRef([]);
+
+            // ESCUCHA DE DATOS EN TIEMPO REAL
             useEffect(() => {
                 auth.signInAnonymously();
-                const u = db.collection('temporadas').orderBy('fechaCreacion', 'desc').onSnapshot(s => {
-                    setTemporadas(s.docs.map(d => ({ id: d.id, ...d.data() })));
+                const u = db.collection('temporadas').orderBy('fechaCreacion', 'desc').onSnapshot(snap => {
+                    setDataTemporadas(snap.docs.map(d => ({ id: d.id, ...d.data() })));
                 });
                 return () => u();
             }, []);
 
-            useEffect(() => { localStorage.setItem('fulmi_config_v4', JSON.stringify(bg)); }, [bg]);
+            useEffect(() => {
+                localStorage.setItem('fulmi_ui_v45', JSON.stringify(uiConfig));
+            }, [uiConfig]);
 
-            const saltarEnter = (e, i, tId) => {
+            // MANEJO DE TECLADO (ENTER)
+            const alPresionarEnter = (e, index, tempId) => {
                 if (e.key === 'Enter') {
                     e.preventDefault();
-                    if (i < 6) inputsRef.current[i + 1].focus();
-                    else guardarRegistro(tId);
+                    if (index < 6) {
+                        refsFoco.current[index + 1].focus();
+                    } else {
+                        procesarGuardado(tempId);
+                    }
                 }
             };
 
-            const guardarRegistro = async (id) => {
-                if (!form.chofer || !form.precio) return;
-                const adelanto = form.empresa === '' && form.campo === '';
-                const netoVal = adelanto ? parseFloat(form.precio) : (parseFloat(form.has || 0) * parseFloat(form.precio || 0));
-                const totalVal = adelanto ? netoVal : netoVal * (1 + (parseFloat(form.iva || 0) / 100));
+            // LÓGICA DE GUARDADO DE TRABAJOS Y ADELANTOS
+            const procesarGuardado = async (tId) => {
+                if (!nuevoReg.chofer || !nuevoReg.precio) return;
+                
+                const esAdelanto = nuevoReg.empresa.trim() === '' && nuevoReg.campo.trim() === '';
+                const netoNumeric = esAdelanto ? parseFloat(nuevoReg.precio) : (parseFloat(nuevoReg.has || 0) * parseFloat(nuevoReg.precio || 0));
+                const totalNumeric = esAdelanto ? netoNumeric : netoNumeric * (1 + (parseFloat(nuevoReg.iva || 0) / 100));
 
-                const item = { ...form, id: Date.now().toString(), neto: netoVal, total: totalVal, esAdelanto: adelanto, fecha: new Date().toLocaleDateString(), cobrado: false, pagado: false, img: null };
-                await db.collection('temporadas').doc(id).update({ trabajos: firebase.firestore.FieldValue.arrayUnion(item) });
-                setForm({ ...form, empresa: '', campo: '', lote: '', has: '', precio: '', iva: '0' });
-                inputsRef.current[0].focus();
+                const registroFinal = {
+                    ...nuevoReg,
+                    id: Date.now().toString(),
+                    neto: netoNumeric,
+                    total: totalNumeric,
+                    esAdelanto,
+                    fecha: new Date().toLocaleDateString(),
+                    cobrado: false,
+                    pagado: false,
+                    foto: null
+                };
+
+                await db.collection('temporadas').doc(tId).update({
+                    trabajos: firebase.firestore.FieldValue.arrayUnion(registroFinal)
+                });
+
+                // Limpiar campos manteniendo el chofer
+                setNuevoReg({ ...nuevoReg, empresa: '', campo: '', lote: '', has: '', precio: '', iva: '0' });
+                refsFoco.current[0].focus();
             };
 
-            const mesa = useMemo(() => {
-                if (!idActiva || !filtro) return null;
-                const t = temporadas.find(x => x.id === idActiva);
-                const items = t?.trabajos?.filter(tr => tr.chofer.toUpperCase().includes(filtro.toUpperCase())) || [];
-                const emps = {};
-                const ads = [];
-                items.forEach(tr => {
-                    if (tr.esAdelanto) ads.push(tr);
-                    else {
-                        if (!emps[tr.empresa]) emps[tr.empresa] = { neto: 0, has: 0 };
-                        emps[tr.empresa].neto += tr.neto;
-                        emps[tr.empresa].has += parseFloat(tr.has || 0);
+            // CÁLCULOS DE LA MESA DE LIQUIDACIÓN
+            const calculosChofer = useMemo(() => {
+                if (!idSeleccionada || !busqueda) return null;
+                const temp = dataTemporadas.find(t => t.id === idSeleccionada);
+                const filtrados = temp?.trabajos?.filter(tr => tr.chofer.toUpperCase().includes(busqueda.toUpperCase())) || [];
+                
+                const resumenEmpresas = {};
+                const listaAdelantos = [];
+                let hectareasTotales = 0;
+
+                filtrados.forEach(tr => {
+                    if (tr.esAdelanto) {
+                        listaAdelantos.push(tr);
+                    } else {
+                        if (!resumenEmpresas[tr.empresa]) resumenEmpresas[tr.empresa] = { neto: 0, has: 0 };
+                        resumenEmpresas[tr.empresa].neto += tr.neto;
+                        resumenEmpresas[tr.empresa].has += parseFloat(tr.has || 0);
+                        hectareasTotales += parseFloat(tr.has || 0);
                     }
                 });
-                let sumComis = 0;
-                Object.keys(emps).forEach(k => { sumComis += (emps[k].neto * ((pcts[k] || 0) / 100)); });
-                const sumAds = ads.reduce((s, c) => s + c.neto, 0);
-                return { emps, sumComis, sumAds, saldo: sumComis - sumAds };
-            }, [temporadas, idActiva, filtro, pcts]);
 
-            if (!acceso) {
+                let totalComisionPagar = 0;
+                Object.keys(resumenEmpresas).forEach(nombre => {
+                    const porc = comisiones[nombre] || 0;
+                    totalComisionPagar += (resumenEmpresas[nombre].neto * (porc / 100));
+                });
+
+                const totalAdelantosRestar = listaAdelantos.reduce((acc, curr) => acc + curr.neto, 0);
+
+                return { 
+                    resumenEmpresas, 
+                    totalAdelantosRestar, 
+                    totalComisionPagar, 
+                    hectareasTotales, 
+                    finalAPagar: totalComisionPagar - totalAdelantosRestar 
+                };
+            }, [dataTemporadas, idSeleccionada, busqueda, comisiones]);
+
+            if (!login) {
                 return (
-                    <div className="h-screen flex items-center justify-center bg-slate-950 px-6">
-                        <div className="card-cristal p-12 w-full max-w-sm text-center">
-                            <h2 className="text-3xl font-black mb-8 italic text-orange-500 uppercase">Seguridad</h2>
-                            <input type="password" placeholder="CLAVE" className="input-fulmi text-center text-2xl" onChange={e => e.target.value === '1986' && setAcceso(true)} />
+                    <div className="h-screen flex items-center justify-center bg-slate-950 px-10">
+                        <div className="glass-panel p-12 w-full max-w-sm text-center">
+                            <h2 className="text-3xl font-black mb-8 italic text-orange-600">ACCESO</h2>
+                            <input type="password" placeholder="CLAVE" className="input-global text-center text-xl" 
+                                   onChange={e => e.target.value === '1986' && setLogin(true)} />
                         </div>
                     </div>
                 );
@@ -194,133 +245,160 @@
 
             return (
                 <div className="min-h-screen p-4 md:p-10 relative">
-                    <div className="fondo-sistema" style={{backgroundImage: `url(${bg.url})`, opacity: bg.op}}></div>
+                    <div className="fondo-dinamico" style={{backgroundImage: `url(${uiConfig.url})`, opacity: uiConfig.op}}></div>
                     
-                    <header className="card-cristal p-8 mb-8 flex flex-col md:flex-row justify-between items-center gap-6">
-                        <div className="flex items-center gap-5">
-                            <div className="bg-orange-600 w-16 h-16 rounded-3xl flex items-center justify-center shadow-lg"><i className="fas fa-gas-pump text-white text-2xl"></i></div>
+                    {/* ENCABEZADO Y BUSCADOR */}
+                    <header className="glass-panel p-6 mb-8 flex flex-col md:flex-row justify-between items-center gap-6">
+                        <div className="flex items-center gap-4">
+                            <div className="w-14 h-14 bg-orange-600 rounded-2xl flex items-center justify-center shadow-lg shadow-orange-900/40">
+                                <i className="fas fa-tractor text-white text-xl"></i>
+                            </div>
                             <div>
-                                <h1 className="text-3xl font-black italic text-orange-500">LA FULMIGADORA</h1>
-                                <p className="text-[10px] font-black opacity-30 uppercase tracking-[0.3em]">Gestión de Flota e Importes</p>
+                                <h1 className="text-2xl font-black italic text-orange-500 uppercase leading-none">LA FULMIGADORA</h1>
+                                <p className="text-[10px] font-black opacity-30 tracking-widest mt-1 uppercase">Control de Liquidaciones</p>
                             </div>
                         </div>
                         <div className="flex gap-4 w-full md:w-auto">
-                            <input type="text" placeholder="BUSCAR CHOFER PARA LIQUIDAR..." className="input-fulmi md:w-80 border-orange-500/30" onChange={e => setFiltro(e.target.value)} />
-                            <button onClick={() => setVerConfig(!verConfig)} className="bg-white/5 w-14 h-14 rounded-2xl flex items-center justify-center border border-white/10 hover:bg-orange-600 transition-all"><i className="fas fa-cog"></i></button>
+                            <input type="text" placeholder="FILTRAR POR CHOFER..." className="input-global md:w-64" onChange={e => setBusqueda(e.target.value)} />
+                            <button onClick={() => setMostrarConfig(!mostrarConfig)} className="bg-white/5 w-12 h-12 rounded-xl border border-white/10 hover:bg-orange-600 transition-all"><i className="fas fa-palette"></i></button>
                         </div>
                     </header>
 
-                    {verConfig && (
-                        <div className="card-cristal p-8 mb-8 animar">
+                    {/* CONFIGURACIÓN DE INTERFAZ */}
+                    {mostrarConfig && (
+                        <div className="glass-panel p-8 mb-8 animar-entrada">
+                            <h3 className="text-xs font-black opacity-40 uppercase mb-4">Personalización del Sistema</h3>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <div><label className="text-[10px] font-black opacity-40 uppercase ml-2">URL del Fondo</label>
-                                <input type="text" className="input-fulmi" value={bg.url} onChange={e => setBg({...bg, url: e.target.value})} /></div>
-                                <div><label className="text-[10px] font-black opacity-40 uppercase ml-2">Opacidad ({bg.op})</label>
-                                <input type="range" min="0" max="1" step="0.05" className="w-full mt-4" value={bg.op} onChange={e => setBg({...bg, op: e.target.value})} /></div>
+                                <input type="text" placeholder="URL de imagen de fondo" className="input-global" value={uiConfig.url} onChange={e => setUiConfig({...uiConfig, url: e.target.value})} />
+                                <div className="flex items-center gap-4">
+                                    <span className="text-xs font-black">OPACIDAD:</span>
+                                    <input type="range" min="0" max="1" step="0.05" className="w-full" value={uiConfig.op} onChange={e => setUiConfig({...uiConfig, op: e.target.value})} />
+                                </div>
                             </div>
                         </div>
                     )}
 
-                    {mesa && filtro && (
-                        <section className="card-cristal p-10 mb-10 border-orange-500/40 animar">
-                            <h2 className="text-xl font-black uppercase mb-8 italic text-orange-500">Mesa de Liquidación Dinámica: {filtro}</h2>
+                    {/* MESA DE LIQUIDACIÓN DINÁMICA */}
+                    {calculosChofer && busqueda && (
+                        <section className="glass-panel p-10 mb-10 border-orange-500/40 animar-entrada">
+                            <div className="flex items-center gap-3 mb-8">
+                                <span className="bg-orange-600 text-[10px] font-black px-2 py-1 rounded">CALCULADORA</span>
+                                <h2 className="text-xl font-black uppercase italic">Chofer: {busqueda}</h2>
+                            </div>
                             <div className="grid grid-cols-1 xl:grid-cols-3 gap-10">
                                 <div className="xl:col-span-2 space-y-4">
-                                    {Object.keys(mesa.emps).map(e => (
-                                        <div key={e} className="bg-white/5 p-6 rounded-[2rem] border border-white/5 flex justify-between items-center">
+                                    {Object.keys(calculosChofer.resumenEmpresas).map(nombre => (
+                                        <div key={nombre} className="bg-black/20 p-5 rounded-3xl border border-white/5 flex justify-between items-center">
                                             <div>
-                                                <h4 className="font-black text-white uppercase text-lg">{e}</h4>
-                                                <p className="text-xs opacity-40 font-bold uppercase">{mesa.emps[e].has} HAS | Neto: ${mesa.emps[e].neto.toLocaleString()}</p>
+                                                <p className="font-black text-white uppercase text-lg">{nombre}</p>
+                                                <p className="text-[10px] font-bold opacity-30 uppercase">{calculosChofer.resumenEmpresas[nombre].has} HAS TOTALES</p>
                                             </div>
                                             <div className="flex items-center gap-6">
-                                                <div className="bg-black/40 p-2 rounded-xl border border-orange-500/30 flex items-center">
-                                                    <input type="number" className="bg-transparent w-12 text-center text-orange-500 font-black text-xl outline-none" placeholder="0" value={pcts[e] || ''} onChange={v => setPcts({...pcts, [e]: v.target.value})} />
-                                                    <span className="text-xs font-black text-orange-500 mr-2">%</span>
+                                                <div className="text-right">
+                                                    <p className="text-[9px] opacity-30 uppercase font-black">Neto Empresa</p>
+                                                    <p className="font-black text-white">${calculosChofer.resumenEmpresas[nombre].neto.toLocaleString()}</p>
                                                 </div>
-                                                <p className="text-xl font-black text-green-400 w-32 text-right">${((mesa.emps[e].neto * (pcts[e] || 0)) / 100).toLocaleString()}</p>
+                                                <div className="bg-orange-600/10 p-2 rounded-xl border border-orange-500/30 flex items-center">
+                                                    <input type="number" className="bg-transparent w-10 text-center text-orange-500 font-black text-lg outline-none" value={comisiones[nombre] || ''} onChange={v => setComisiones({...comisiones, [nombre]: v.target.value})} />
+                                                    <span className="text-xs font-black text-orange-500 mr-1">%</span>
+                                                </div>
                                             </div>
                                         </div>
                                     ))}
                                 </div>
-                                <div className="bg-black/60 p-8 rounded-[3rem] border border-orange-500/20 flex flex-col justify-between shadow-2xl">
+                                <div className="bg-black/50 p-8 rounded-[2.5rem] border border-orange-500/20 flex flex-col justify-between shadow-2xl">
                                     <div className="space-y-4">
-                                        <div className="flex justify-between text-xs opacity-50 uppercase"><span>Subtotal Comis:</span><span className="font-black text-white">${mesa.sumComis.toLocaleString()}</span></div>
-                                        <div className="flex justify-between text-xs opacity-50 uppercase text-red-400"><span>Adelantos:</span><span className="font-black">-${mesa.sumAds.toLocaleString()}</span></div>
+                                        <div className="flex justify-between text-xs opacity-40 uppercase"><span>Comisiones:</span><span className="font-black text-green-400">${calculosChofer.totalComisionPagar.toLocaleString()}</span></div>
+                                        <div className="flex justify-between text-xs opacity-40 uppercase"><span>Adelantos:</span><span className="font-black text-red-500">-${calculosChofer.totalAdelantosRestar.toLocaleString()}</span></div>
+                                        <div className="flex justify-between text-xs opacity-40 uppercase pt-4 border-t border-white/5"><span>Has Totales:</span><span className="font-black">{calculosChofer.hectareasTotales}</span></div>
                                     </div>
                                     <div className="text-right mt-10">
-                                        <p className="text-[10px] font-black opacity-30 uppercase tracking-widest">Saldo a Pagar</p>
-                                        <p className="text-5xl font-black text-white">${mesa.saldo.toLocaleString()}</p>
+                                        <p className="text-[10px] font-black opacity-30 uppercase">Neto Final a Pagar</p>
+                                        <p className="text-5xl font-black text-white tracking-tighter">${calculosChofer.finalAPagar.toLocaleString()}</p>
                                     </div>
                                 </div>
                             </div>
                         </section>
                     )}
 
-                    <div className="space-y-10 pb-20">
-                        {temporadas.map(t => (
-                            <div key={t.id} className="card-cristal overflow-hidden">
-                                <div className={`p-8 flex justify-between items-center cursor-pointer ${idActiva === t.id ? 'bg-orange-600/10' : 'hover:bg-white/5'}`} onClick={() => setIdActiva(idActiva === t.id ? null : t.id)}>
+                    {/* LISTADO DE TEMPORADAS */}
+                    <main className="space-y-10 pb-20">
+                        {dataTemporadas.map(temp => (
+                            <div key={temp.id} className="glass-panel overflow-hidden">
+                                <div className={`p-8 flex justify-between items-center cursor-pointer ${idSeleccionada === temp.id ? 'bg-orange-600/10' : 'hover:bg-white/5'}`} 
+                                     onClick={() => setIdSeleccionada(idSeleccionada === temp.id ? null : temp.id)}>
                                     <div className="flex items-center gap-5">
-                                        <i className={`fas fa-folder-open text-2xl ${idActiva === t.id ? 'text-orange-500' : 'opacity-20'}`}></i>
-                                        <h3 className="text-2xl font-black uppercase italic">{t.nombre}</h3>
+                                        <i className={`fas fa-archive text-2xl ${idSeleccionada === temp.id ? 'text-orange-500' : 'opacity-20'}`}></i>
+                                        <h3 className="text-2xl font-black uppercase italic tracking-tighter">{temp.nombre}</h3>
                                     </div>
-                                    <i className={`fas fa-chevron-${idActiva === t.id ? 'up text-orange-500' : 'down opacity-10'}`}></i>
+                                    <i className={`fas fa-chevron-${idSeleccionada === temp.id ? 'up text-orange-500' : 'down opacity-10'}`}></i>
                                 </div>
 
-                                {idActiva === t.id && (
-                                    <div className="p-8 space-y-10 bg-black/40 animar">
-                                        {/* FORMULARIO DE 7 CAMPOS COMPLETO */}
+                                {idSeleccionada === temp.id && (
+                                    <div className="p-8 space-y-10 bg-black/40 animar-entrada">
+                                        
+                                        {/* FORMULARIO DE CARGA DE 7 CAMPOS */}
                                         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4 bg-white/5 p-8 rounded-[2rem] border border-white/5">
-                                            <div className="space-y-1"><span className="text-[9px] font-black opacity-30 ml-2 uppercase">Empresa</span>
-                                            <input ref={el => inputsRef.current[0] = el} type="text" className="input-fulmi" value={form.empresa} onChange={e=>setForm({...form, empresa:e.target.value})} onKeyDown={e=>saltarEnter(e, 0, t.id)} /></div>
-                                            <div className="space-y-1"><span className="text-[9px] font-black opacity-30 ml-2 uppercase">Campo</span>
-                                            <input ref={el => inputsRef.current[1] = el} type="text" className="input-fulmi" value={form.campo} onChange={e=>setForm({...form, campo:e.target.value})} onKeyDown={e=>saltarEnter(e, 1, t.id)} /></div>
-                                            <div className="space-y-1"><span className="text-[9px] font-black opacity-30 ml-2 uppercase">Lote</span>
-                                            <input ref={el => inputsRef.current[2] = el} type="text" className="input-fulmi" value={form.lote} onChange={e=>setForm({...form, lote:e.target.value})} onKeyDown={e=>saltarEnter(e, 2, t.id)} /></div>
-                                            <div className="space-y-1"><span className="text-[9px] font-black opacity-30 ml-2 uppercase">Chofer</span>
-                                            <input ref={el => inputsRef.current[3] = el} type="text" className="input-fulmi" value={form.chofer} onChange={e=>setForm({...form, chofer:e.target.value})} onKeyDown={e=>saltarEnter(e, 3, t.id)} /></div>
-                                            <div className="space-y-1"><span className="text-[9px] font-black opacity-30 ml-2 uppercase">Has</span>
-                                            <input ref={el => inputsRef.current[4] = el} type="number" className="input-fulmi" value={form.has} onChange={e=>setForm({...form, has:e.target.value})} onKeyDown={e=>saltarEnter(e, 4, t.id)} /></div>
-                                            <div className="space-y-1"><span className="text-[9px] font-black opacity-30 ml-2 uppercase">$ Neto</span>
-                                            <input ref={el => inputsRef.current[5] = el} type="number" className="input-fulmi" value={form.precio} onChange={e=>setForm({...form, precio:e.target.value})} onKeyDown={e=>saltarEnter(e, 5, t.id)} /></div>
-                                            <div className="space-y-1"><span className="text-[9px] font-black opacity-30 ml-2 uppercase">IVA %</span>
-                                            <input ref={el => inputsRef.current[6] = el} type="number" className="input-fulmi" value={form.iva} onChange={e=>setForm({...form, iva:e.target.value})} onKeyDown={e=>saltarEnter(e, 6, t.id)} /></div>
-                                            <button onClick={()=>guardarRegistro(t.id)} className="btn-principal lg:col-span-7 flex items-center justify-center gap-3"><i className="fas fa-plus"></i> Guardar Registro</button>
+                                            {[
+                                                {n:'empresa', l:'Empresa'}, {n:'campo', l:'Campo'}, {n:'lote', l:'Lote'}, 
+                                                {n:'chofer', l:'Chofer'}, {n:'has', l:'Hectáreas'}, {n:'precio', l:'$ Neto'}, {n:'iva', l:'IVA %'}
+                                            ].map((campo, i) => (
+                                                <div key={campo.n} className="flex flex-col gap-1">
+                                                    <span className="text-[9px] font-black opacity-30 uppercase ml-2">{campo.l}</span>
+                                                    <input 
+                                                        ref={el => refsFoco.current[i] = el}
+                                                        type={i >= 4 ? "number" : "text"}
+                                                        className="input-global"
+                                                        value={nuevoReg[campo.n]}
+                                                        onChange={e => setNuevoReg({...nuevoReg, [campo.n]: e.target.value})}
+                                                        onKeyDown={e => alPresionarEnter(e, i, temp.id)}
+                                                    />
+                                                </div>
+                                            ))}
+                                            <button onClick={() => procesarGuardado(temp.id)} className="btn-accion lg:col-span-7 flex items-center justify-center gap-3">
+                                                <i className="fas fa-save"></i> Guardar en {temp.nombre}
+                                            </button>
                                         </div>
 
-                                        {/* TABLA CON BOTÓN CÁMARA */}
-                                        <div className="overflow-x-auto custom-scroll">
+                                        {/* TABLA DE TRABAJOS CON BOTÓN CÁMARA */}
+                                        <div className="overflow-x-auto scroll-custom">
                                             <table className="w-full border-separate border-spacing-y-4">
                                                 <thead>
                                                     <tr className="text-[10px] font-black opacity-30 uppercase text-left tracking-widest">
-                                                        <th className="px-6">Detalle Trabajo</th>
-                                                        <th className="px-6">Chofer</th>
+                                                        <th className="px-6">Movimiento</th>
+                                                        <th className="px-6">Responsable</th>
                                                         <th className="px-6 text-right">Neto</th>
-                                                        <th className="px-6 text-center">Remito</th>
+                                                        <th className="px-6 text-center">Cámara</th>
                                                         <th className="px-6 text-center">Estado</th>
                                                         <th className="px-6"></th>
                                                     </tr>
                                                 </thead>
                                                 <tbody>
-                                                    {t.trabajos?.filter(x => x.chofer.toUpperCase().includes(filtro.toUpperCase())).map(reg => (
-                                                        <tr key={reg.id} className={`card-cristal hover:bg-white/5 transition-all ${reg.esAdelanto ? 'border-yellow-500/20 bg-yellow-500/5' : ''}`}>
+                                                    {temp.trabajos?.filter(x => x.chofer.toUpperCase().includes(busqueda.toUpperCase())).map(tr => (
+                                                        <tr key={tr.id} className={`glass-panel hover:bg-white/5 transition-all ${tr.esAdelanto ? 'bg-yellow-600/5' : ''}`}>
                                                             <td className="p-6 rounded-l-[2rem]">
-                                                                <div className={`font-black uppercase ${reg.esAdelanto ? 'text-yellow-500' : 'text-orange-500'}`}>{reg.esAdelanto ? 'Adelanto de efectivo' : `${reg.empresa} - ${reg.lote}`}</div>
-                                                                <div className="text-[10px] font-bold opacity-30 uppercase">{reg.fecha} | {reg.campo}</div>
+                                                                <div className={`font-black uppercase ${tr.esAdelanto ? 'text-yellow-500' : 'text-orange-500'}`}>
+                                                                    {tr.esAdelanto ? 'Adelanto de efectivo' : `${tr.empresa} - ${tr.lote}`}
+                                                                </div>
+                                                                <div className="text-[10px] font-bold opacity-30 uppercase mt-1">{tr.fecha} | {tr.campo}</div>
                                                             </td>
-                                                            <td className="p-6 font-black uppercase text-xs">{reg.chofer}</td>
-                                                            <td className={`p-6 text-right font-black text-lg ${reg.esAdelanto ? 'text-yellow-500' : 'text-white'}`}>${reg.neto.toLocaleString()}</td>
+                                                            <td className="p-6 font-black uppercase text-xs">{tr.chofer}</td>
+                                                            <td className={`p-6 text-right font-black text-lg ${tr.esAdelanto ? 'text-yellow-500' : 'text-white'}`}>
+                                                                ${tr.neto.toLocaleString()}
+                                                            </td>
                                                             <td className="p-6 text-center">
-                                                                <button className="text-white/20 hover:text-orange-500 text-xl transition-all"><i className="fas fa-camera"></i></button>
+                                                                <button className="text-white/20 hover:text-orange-500 transition-all p-2 rounded-lg bg-white/5">
+                                                                    <i className="fas fa-camera"></i>
+                                                                </button>
                                                             </td>
                                                             <td className="p-6">
                                                                 <div className="flex justify-center gap-3">
-                                                                    <button className={`w-10 h-10 rounded-xl border-2 ${reg.cobrado ? 'bg-green-600 border-green-400' : 'border-white/10 opacity-10'}`}><i className="fas fa-check"></i></button>
-                                                                    <button className={`w-10 h-10 rounded-xl border-2 ${reg.pagado ? 'bg-blue-600 border-blue-400' : 'border-white/10 opacity-10'}`}><i className="fas fa-check"></i></button>
+                                                                    <button className={`w-10 h-10 rounded-xl border-2 transition-all ${tr.cobrado ? 'bg-green-600 border-green-400 shadow-lg shadow-green-900/40' : 'border-white/10 opacity-10'}`}><i className="fas fa-check"></i></button>
+                                                                    <button className={`w-10 h-10 rounded-xl border-2 transition-all ${tr.pagado ? 'bg-blue-600 border-blue-400 shadow-lg shadow-blue-900/40' : 'border-white/10 opacity-10'}`}><i className="fas fa-check"></i></button>
                                                                 </div>
                                                             </td>
                                                             <td className="p-6 rounded-r-[2rem] text-right">
-                                                                <button onClick={async() => { if(confirm('¿Borrar?')) { const n = t.trabajos.filter(x => x.id !== reg.id); await db.collection('temporadas').doc(t.id).update({ trabajos: n }); } }} className="text-white/5 hover:text-red-500 p-3"><i className="fas fa-trash-alt"></i></button>
+                                                                <button onClick={async() => { if(confirm('¿Borrar?')) { const n = temp.trabajos.filter(x => x.id !== tr.id); await db.collection('temporadas').doc(temp.id).update({ trabajos: n }); } }} className="text-white/5 hover:text-red-500 p-3"><i className="fas fa-trash-alt"></i></button>
                                                             </td>
                                                         </tr>
                                                     ))}
@@ -331,13 +409,13 @@
                                 )}
                             </div>
                         ))}
-                    </div>
+                    </main>
                 </div>
             );
         };
 
         const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(<AppLaFulmigadora />);
+        root.render(<AppFulmigadora />);
     </script>
 </body>
 </html>
