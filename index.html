@@ -3,126 +3,31 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>La Fulmigadora PRO - Gestión Total v5.5</title>
-    
+    <title>La Fulmigadora - Control de Gestión</title>
     <script src="https://www.gstatic.com/firebasejs/11.1.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/11.1.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore-compat.js"></script>
+    
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;900&display=swap');
-        
-        :root {
-            --naranja: #ea580c;
-            --oscuro-puro: #020617;
-            --cristal-fuerte: rgba(255, 255, 255, 0.04);
-            --borde-resaltado: rgba(255, 255, 255, 0.12);
-        }
-
-        body { 
-            font-family: 'Inter', sans-serif; 
-            background-color: var(--oscuro-puro); 
-            color: #f1f5f9; 
-            margin: 0; 
-            min-height: 100vh;
-            overflow-x: hidden;
-        }
-
-        /* FONDO DINÁMICO DE ALTA FIDELIDAD */
-        .sistema-fondo {
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            z-index: -10;
-            background-size: cover;
-            background-position: center;
-            transition: opacity 0.8s ease-in-out;
-        }
-
-        /* CONTENEDORES GLASSMORPHISM */
-        .tarjeta-maestra {
-            background: var(--cristal-fuerte);
-            backdrop-filter: blur(30px);
-            -webkit-backdrop-filter: blur(30px);
-            border: 1px solid var(--borde-resaltado);
-            border-radius: 2.5rem;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
-        }
-
-        /* INPUTS PERSONALIZADOS EXTENSOS */
-        .campo-carga {
-            background: rgba(0, 0, 0, 0.7);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            color: white;
-            border-radius: 1.2rem;
-            padding: 1rem;
-            font-weight: 700;
-            font-size: 0.9rem;
-            width: 100%;
-            outline: none;
-            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-
-        .campo-carga:focus {
-            border-color: var(--naranja);
-            box-shadow: 0 0 25px rgba(234, 88, 12, 0.3);
-            background: rgba(0, 0, 0, 0.85);
-            transform: translateY(-2px);
-        }
-
-        /* BOTONES DE ACCIÓN */
-        .btn-fulmi {
-            background: linear-gradient(135deg, #ea580c 0%, #c2410c 100%);
-            color: white;
-            font-weight: 900;
-            letter-spacing: 0.05em;
-            text-transform: uppercase;
-            padding: 1.25rem;
-            border-radius: 1.5rem;
-            box-shadow: 0 10px 25px rgba(234, 88, 12, 0.4);
-            transition: all 0.3s ease;
-            cursor: pointer;
-        }
-
-        .btn-fulmi:hover {
-            box-shadow: 0 15px 30px rgba(234, 88, 12, 0.5);
-            transform: scale(1.02);
-        }
-
-        .btn-fulmi:active { transform: scale(0.97); }
-
-        /* TABLAS Y SCROLLBARS */
-        .scroll-pro::-webkit-scrollbar { width: 6px; height: 6px; }
-        .scroll-pro::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.15); border-radius: 10px; }
-        
-        .fila-tabla {
-            transition: all 0.3s ease;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.03);
-        }
-        
-        .fila-tabla:hover {
-            background: rgba(255, 255, 255, 0.05);
-        }
-
-        /* ANIMACIONES */
-        @keyframes fadeInScale {
-            from { opacity: 0; transform: scale(0.98) translateY(10px); }
-            to { opacity: 1; transform: scale(1) translateY(0); }
-        }
-        .animar-seccion { animation: fadeInScale 0.5s ease-out forwards; }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+        .loading-pulse { animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .5; } }
+        .bg-blur { backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
     </style>
 </head>
 <body>
     <div id="root"></div>
 
     <script type="text/babel">
-        const { useState, useEffect, useMemo, useRef } = React;
+        const { useState, useEffect, useRef } = React;
 
-        // CONFIGURACIÓN DE FIREBASE (SIN CAMBIOS)
+        // --- CONFIGURACIÓN CORREGIDA CON EL CERO (C0) ---
         const firebaseConfig = {
             apiKey: "AIzaSyC0jIDWwzWFgugZpY8mhOFZEh-ZAUhed7Y",
             authDomain: "la-fulmigadora.firebaseapp.com",
@@ -132,434 +37,418 @@
             appId: "1:235458080625:web:61ea831d6620f1ecde10d0"
         };
 
-        if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
-        const db = firebase.firestore();
-        const auth = firebase.auth();
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
 
-        const LaFulmigadoraApp = () => {
-            const [isAuth, setIsAuth] = useState(false);
+        const Icon = ({ name, className }) => <i className={`${name} ${className}`}></i>;
+
+        const App = () => {
+            const [user, setUser] = useState(null);
+            const [db, setDb] = useState(null);
+            const [cargandoNube, setCargandoNube] = useState(true);
+            const [appId] = useState('la-fulmigadora'); 
+
+            const [fondoConfig, setFondoConfig] = useState(() => {
+                const saved = localStorage.getItem('fulmigadora_fondo_config');
+                return saved ? JSON.parse(saved) : { url: null, enBloqueo: true, enPanel: true };
+            });
+            const [mostrarConfigFondo, setMostrarConfigFondo] = useState(false);
+            const [autorizado, setAutorizado] = useState(false);
+            const [passwordInput, setPasswordInput] = useState('');
             const [temporadas, setTemporadas] = useState([]);
-            const [activeTempId, setActiveTempId] = useState(null);
-            const [filtroChofer, setFiltroChofer] = useState('');
-            const [comisionesConfig, setComisionesConfig] = useState({});
-            const [showConfig, setShowConfig] = useState(false);
-            
-            // ESTADO DE LA INTERFAZ (PERSISTENCIA LOCAL)
-            const [uiSettings, setUiSettings] = useState(() => {
-                const saved = localStorage.getItem('fulmi_pro_v55');
-                return saved ? JSON.parse(saved) : { 
-                    bgUrl: "https://images.unsplash.com/photo-1594143493892-23c7263309a9?q=80&w=2070", 
-                    opacity: 0.3 
-                };
+            const [nuevaTemporadaNombre, setNuevaTemporadaNombre] = useState('');
+            const [temporadaActiva, setTemporadaActiva] = useState(null);
+            const [filtroGlobal, setFiltroGlobal] = useState({ empresa: '', chofer: '' });
+            const [nuevoTrabajo, setNuevoTrabajo] = useState({
+                empresa: '', campo: '', lote: '', chofer: '', 
+                hectareas: '', precioHectarea: '', ivaPorcentaje: '0', remito: null,
+                pagadoAChofer: false, cobradoAEmpresa: false
             });
 
-            // FORMULARIO DE 7 CAMPOS REQUERIDO
-            const [formData, setFormData] = useState({
-                empresa: '', campo: '', lote: '', chofer: '', has: '', netoItem: '', iva: '0'
-            });
-
-            const inputRefs = useRef([]);
-
-            // CARGA DE DATOS DESDE FIRESTORE
             useEffect(() => {
-                auth.signInAnonymously();
-                const unsubscribe = db.collection('temporadas').orderBy('fechaCreacion', 'desc').onSnapshot(snap => {
-                    const data = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                    setTemporadas(data);
+                localStorage.setItem('fulmigadora_fondo_config', JSON.stringify(fondoConfig));
+            }, [fondoConfig]);
+
+            useEffect(() => {
+                const firestore = firebase.firestore();
+                const auth = firebase.auth();
+                setDb(firestore);
+
+                auth.signInAnonymously().catch(e => console.error("Error Auth:", e));
+
+                const unsubscribeAuth = auth.onAuthStateChanged((u) => {
+                    if (u) setUser(u);
                 });
-                return () => unsubscribe();
+
+                return () => unsubscribeAuth();
             }, []);
 
             useEffect(() => {
-                localStorage.setItem('fulmi_pro_v55', JSON.stringify(uiSettings));
-            }, [uiSettings]);
+                if (db && user) {
+                    const unsubscribe = db.collection('temporadas')
+                        .orderBy('fechaCreacion', 'desc')
+                        .onSnapshot((snapshot) => {
+                            const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                            setTemporadas(data);
+                            setCargandoNube(false);
+                        }, (err) => {
+                            console.error("Error Firestore:", err);
+                            setCargandoNube(false);
+                        });
+                    return () => unsubscribe();
+                }
+            }, [db, user]);
 
-            // LÓGICA DE NAVEGACIÓN POR ENTER
-            const handleKeyDown = (e, index, tempId) => {
-                if (e.key === 'Enter') {
-                    e.preventDefault();
-                    if (index < 6) {
-                        inputRefs.current[index + 1].focus();
-                    } else {
-                        guardarRegistroFirestore(tempId);
-                    }
+            const verificarPassword = (e) => {
+                e.preventDefault();
+                if (passwordInput === '1986') { setAutorizado(true); } else { setPasswordInput(''); }
+            };
+
+            const manejarCargaFondo = (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onloadend = () => setFondoConfig({ ...fondoConfig, url: reader.result });
+                    reader.readAsDataURL(file);
                 }
             };
 
-            // FUNCIÓN DE GUARDADO EXTENSA (CON CÁLCULOS NETOS)
-            const guardarRegistroFirestore = async (tId) => {
-                if (!formData.chofer || !formData.netoItem) {
-                    alert('Faltan datos críticos (Chofer o Precio)');
+            const agregarTemporada = async () => {
+                if (!nuevaTemporadaNombre) return;
+                try {
+                    await db.collection('temporadas').add({
+                        nombre: nuevaTemporadaNombre,
+                        trabajos: [],
+                        fechaCreacion: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                    setNuevaTemporadaNombre('');
+                } catch (e) { alert("Error al crear temporada"); }
+            };
+
+            const eliminarTemporada = async (id) => {
+                if(!confirm("¿Eliminar temporada y todos sus datos?")) return;
+                try {
+                    await db.collection('temporadas').doc(id).delete();
+                } catch (e) { alert("Error al eliminar"); }
+            };
+
+            const agregarTrabajo = async (temporadaId) => {
+                if (!nuevoTrabajo.empresa || !nuevoTrabajo.hectareas || !nuevoTrabajo.chofer) {
+                    alert("Completar Empresa, Chofer y Hectáreas");
                     return;
                 }
+                const ha = parseFloat(nuevoTrabajo.hectareas) || 0;
+                const precio = parseFloat(nuevoTrabajo.precioHectarea) || 0;
+                const neto = ha * precio;
+                const ivaVal = neto * (parseFloat(nuevoTrabajo.ivaPorcentaje) / 100);
 
-                const esAdelanto = formData.empresa.trim() === '' && formData.campo.trim() === '';
-                const calculoNeto = esAdelanto ? 
-                    parseFloat(formData.netoItem) : 
-                    (parseFloat(formData.has || 0) * parseFloat(formData.netoItem || 0));
-                
-                const calculoTotal = esAdelanto ? 
-                    calculoNeto : 
-                    calculoNeto * (1 + (parseFloat(formData.iva || 0) / 100));
-
-                const nuevoObjeto = {
-                    ...formData,
+                const registro = {
+                    ...nuevoTrabajo,
                     id: Date.now().toString(),
-                    netoCalculado: calculoNeto,
-                    totalConIva: calculoTotal,
-                    esAdelanto,
-                    fecha: new Date().toLocaleDateString('es-AR'),
-                    estadoCobro: false,
-                    estadoPago: false,
-                    imgRemito: null
+                    importe: neto,
+                    ivaValor: ivaVal,
+                    totalFinal: neto + ivaVal,
+                    fecha: new Date().toLocaleDateString()
                 };
 
-                try {
-                    await db.collection('temporadas').doc(tId).update({
-                        trabajos: firebase.firestore.FieldValue.arrayUnion(nuevoObjeto)
-                    });
-                    
-                    // Resetear formulario pero mantener chofer si se desea cargar varios del mismo
-                    setFormData(prev => ({ ...prev, empresa: '', campo: '', lote: '', has: '', netoItem: '', iva: '0' }));
-                    inputRefs.current[0].focus();
-                } catch (err) {
-                    console.error("Error al guardar:", err);
+                const ref = db.collection('temporadas').doc(temporadaId);
+                await ref.update({
+                    trabajos: firebase.firestore.FieldValue.arrayUnion(registro)
+                });
+                
+                setNuevoTrabajo({ ...nuevoTrabajo, lote: '', hectareas: '', ivaPorcentaje: '0', pagadoAChofer: false, cobradoAEmpresa: false });
+            };
+
+            const toggleEstado = async (temporadaId, trabajoId, campo) => {
+                const temp = temporadas.find(t => t.id === temporadaId);
+                const nuevosTrabajos = temp.trabajos.map(tr => 
+                    tr.id === trabajoId ? { ...tr, [campo]: !tr[campo] } : tr
+                );
+                await db.collection('temporadas').doc(temporadaId).update({ trabajos: nuevosTrabajos });
+            };
+
+            const eliminarTrabajo = async (temporadaId, trabajoId) => {
+                if(!confirm("¿Eliminar este registro?")) return;
+                const temp = temporadas.find(t => t.id === temporadaId);
+                const nuevosTrabajos = temp.trabajos.filter(tr => tr.id !== trabajoId);
+                await db.collection('temporadas').doc(temporadaId).update({ trabajos: nuevosTrabajos });
+            };
+
+            const manejarRemito = (e, temporadaId, trabajoId) => {
+                const file = e.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onloadend = async () => {
+                        const temp = temporadas.find(t => t.id === temporadaId);
+                        const nuevosTrabajos = temp.trabajos.map(tr => 
+                            tr.id === trabajoId ? { ...tr, remito: reader.result } : tr
+                        );
+                        await db.collection('temporadas').doc(temporadaId).update({ trabajos: nuevosTrabajos });
+                    };
+                    reader.readAsDataURL(file);
                 }
             };
 
-            // MESA DE LIQUIDACIÓN AVANZADA (EL NÚCLEO DEL PEDIDO)
-            const liquidacionAnalitica = useMemo(() => {
-                if (!activeTempId || !filtroChofer) return null;
-                
-                const tempActual = temporadas.find(t => t.id === activeTempId);
-                const itemsChofer = tempActual?.trabajos?.filter(tr => 
-                    tr.chofer.toUpperCase().includes(filtroChofer.toUpperCase())
-                ) || [];
-
-                const mapaEmpresas = {};
-                const listadoAdelantos = [];
-                let hectareasAcumuladas = 0;
-
-                itemsChofer.forEach(tr => {
-                    if (tr.esAdelanto) {
-                        listadoAdelantos.push(tr);
-                    } else {
-                        const empKey = tr.empresa.toUpperCase();
-                        if (!mapaEmpresas[empKey]) {
-                            mapaEmpresas[empKey] = { netoTotal: 0, hasTotal: 0, nombreOriginal: tr.empresa };
-                        }
-                        mapaEmpresas[empKey].netoTotal += tr.netoCalculado;
-                        mapaEmpresas[empKey].hasTotal += parseFloat(tr.has || 0);
-                        hectareasAcumuladas += parseFloat(tr.has || 0);
-                    }
+            const obtenerGrupos = (trabajos = []) => {
+                const filtrados = trabajos.filter(tr => 
+                    tr.empresa.toLowerCase().includes(filtroGlobal.empresa.toLowerCase()) && 
+                    tr.chofer.toLowerCase().includes(filtroGlobal.chofer.toLowerCase())
+                );
+                const grupos = {};
+                filtrados.forEach(tr => {
+                    const k = `${tr.empresa}-${tr.campo}`.toLowerCase();
+                    if (!grupos[k]) grupos[k] = { empresa: tr.empresa, campo: tr.campo, items: [], has: 0, total: 0 };
+                    grupos[k].items.push(tr);
+                    grupos[k].has += parseFloat(tr.hectareas) || 0;
+                    grupos[k].total += tr.totalFinal;
                 });
+                return Object.values(grupos);
+            };
 
-                let comisionBruta = 0;
-                Object.keys(mapaEmpresas).forEach(key => {
-                    const porc = comisionesConfig[key] || 0;
-                    comisionBruta += (mapaEmpresas[key].netoTotal * (porc / 100));
-                });
-
-                const totalAdelantos = listadoAdelantos.reduce((acc, curr) => acc + curr.netoCalculado, 0);
-
-                return {
-                    mapaEmpresas,
-                    totalAdelantos,
-                    comisionBruta,
-                    hectareasAcumuladas,
-                    saldoFinal: comisionBruta - totalAdelantos
-                };
-            }, [temporadas, activeTempId, filtroChofer, comisionesConfig]);
-
-            // PANTALLA DE LOGIN INICIAL
-            if (!isAuth) {
+            if (!autorizado) {
                 return (
-                    <div className="h-screen flex items-center justify-center bg-[#020617] p-8">
-                        <div className="tarjeta-maestra p-12 w-full max-w-md text-center">
-                            <i className="fas fa-shield-halved text-5xl text-orange-500 mb-6"></i>
-                            <h2 className="text-3xl font-black mb-8 italic text-white uppercase tracking-tighter">Terminal de Acceso</h2>
-                            <input 
-                                type="password" 
-                                placeholder="INGRESE CONTRASEÑA" 
-                                className="campo-carga text-center text-2xl tracking-[0.5em]" 
-                                onChange={e => e.target.value === '1986' && setIsAuth(true)} 
-                            />
-                            <p className="mt-8 text-[10px] font-bold opacity-30 uppercase tracking-widest">La Fulmigadora - Software de Control</p>
+                    <div className="relative min-h-screen flex items-center justify-center p-4 bg-slate-900 overflow-hidden">
+                        {fondoConfig.url && fondoConfig.enBloqueo && (
+                            <div className="absolute inset-0 z-0 bg-cover bg-center transition-all duration-700" style={{ backgroundImage: `url("${fondoConfig.url}")`, filter: 'brightness(0.2) scale(1.1)' }}></div>
+                        )}
+                        <div className="relative z-10 bg-black/60 backdrop-blur-2xl p-8 rounded-[2.5rem] shadow-2xl w-full max-w-[320px] text-center border border-white/10">
+                            <div className="bg-orange-600 w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
+                                <Icon name="fas fa-shield-alt" className="text-2xl text-white" />
+                            </div>
+                            <h2 className="text-2xl font-black text-white mb-6 uppercase tracking-tighter">La Fulmigadora</h2>
+                            <form onSubmit={verificarPassword} className="space-y-4">
+                                <input type="password" placeholder="CLAVE" className="w-full p-4 bg-white/10 border border-white/10 rounded-xl text-center text-2xl text-white focus:outline-none focus:ring-2 focus:ring-orange-500 shadow-inner"
+                                    value={passwordInput} onChange={(e) => setPasswordInput(e.target.value)} autoFocus />
+                                <button className="w-full bg-orange-600 text-white font-bold py-4 rounded-xl shadow-lg hover:bg-orange-500 active:scale-95 transition-all">ACCEDER</button>
+                            </form>
                         </div>
                     </div>
                 );
             }
 
             return (
-                <div className="min-h-screen p-4 md:p-10 relative">
-                    <div className="sistema-fondo" style={{backgroundImage: `url(${uiSettings.bgUrl})`, opacity: uiSettings.opacity}}></div>
-                    
-                    {/* CABECERA DINÁMICA */}
-                    <header className="tarjeta-maestra p-8 mb-10 flex flex-col lg:flex-row justify-between items-center gap-8">
-                        <div className="flex items-center gap-6">
-                            <div className="w-20 h-20 bg-gradient-to-br from-orange-500 to-orange-800 rounded-[2rem] flex items-center justify-center shadow-2xl">
-                                <i className="fas fa-industry text-white text-3xl"></i>
-                            </div>
-                            <div>
-                                <h1 className="text-4xl font-black italic text-orange-500 uppercase tracking-tighter">LA FULMIGADORA</h1>
-                                <div className="flex items-center gap-2 opacity-40">
-                                    <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
-                                    <p className="text-[11px] font-black uppercase tracking-[0.3em]">Sistema de Gestión Operativa v5.5</p>
-                                </div>
-                            </div>
+                <div className="min-h-screen relative bg-slate-950 text-slate-900 pb-10">
+                    {fondoConfig.url && fondoConfig.enPanel && (
+                        <div className="fixed inset-0 z-0 bg-cover bg-center bg-fixed transition-all duration-700" style={{ backgroundImage: `url("${fondoConfig.url}")` }}>
+                            <div className="absolute inset-0 bg-slate-950/80 backdrop-blur-[2px]"></div>
                         </div>
-
-                        <div className="flex gap-4 w-full lg:w-auto">
-                            <div className="relative flex-1 lg:w-80">
-                                <i className="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 opacity-30"></i>
-                                <input 
-                                    type="text" 
-                                    placeholder="FILTRAR CHOFER PARA LIQUIDAR..." 
-                                    className="campo-carga pl-12 border-orange-500/20"
-                                    onChange={e => setFiltroChofer(e.target.value)}
-                                />
-                            </div>
-                            <button 
-                                onClick={() => setShowConfig(!showConfig)} 
-                                className="bg-white/5 w-14 h-14 rounded-2xl flex items-center justify-center border border-white/10 hover:bg-orange-600 hover:border-orange-500 transition-all duration-500"
-                            >
-                                <i className={`fas fa-cog text-xl ${showConfig ? 'rotate-90 text-white' : 'opacity-40'}`}></i>
-                            </button>
-                        </div>
-                    </header>
-
-                    {/* CONFIGURACIÓN DE UI (RESTAURADO) */}
-                    {showConfig && (
-                        <section className="tarjeta-maestra p-8 mb-10 animar-seccion border-orange-500/30">
-                            <div className="flex items-center gap-3 mb-6">
-                                <i className="fas fa-palette text-orange-500"></i>
-                                <h3 className="text-xs font-black opacity-50 uppercase tracking-[0.2em]">Ajustes de Interfaz</h3>
-                            </div>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-                                <div className="space-y-2">
-                                    <label className="text-[10px] font-black opacity-30 uppercase ml-2">URL de Imagen de Fondo</label>
-                                    <input 
-                                        type="text" 
-                                        className="campo-carga" 
-                                        value={uiSettings.bgUrl} 
-                                        onChange={e => setUiSettings({...uiSettings, bgUrl: e.target.value})} 
-                                    />
-                                </div>
-                                <div className="space-y-2">
-                                    <label className="text-[10px] font-black opacity-30 uppercase ml-2">Nivel de Visibilidad (Opacidad: {uiSettings.opacity})</label>
-                                    <input 
-                                        type="range" min="0" max="1" step="0.05" 
-                                        className="w-full h-2 bg-orange-900 rounded-lg appearance-none cursor-pointer" 
-                                        value={uiSettings.opacity} 
-                                        onChange={e => setUiSettings({...uiSettings, opacity: e.target.value})} 
-                                    />
-                                </div>
-                            </div>
-                        </section>
                     )}
-
-                    {/* MESA DE LIQUIDACIÓN (LÓGICA PEDIDA POR EL USUARIO) */}
-                    {liquidacionAnalitica && filtroChofer && (
-                        <section className="tarjeta-maestra p-10 mb-10 border-orange-600/40 animar-seccion">
-                            <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-4">
-                                <div>
-                                    <h2 className="text-2xl font-black uppercase italic text-orange-500">Mesa de Liquidación</h2>
-                                    <p className="text-sm font-bold opacity-40 uppercase">Analizando registros de: <span className="text-white">{filtroChofer}</span></p>
+                    
+                    <div className="relative z-10 max-w-6xl mx-auto p-4 md:p-6">
+                        <header className="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4 bg-white/10 p-6 rounded-3xl border border-white/20 backdrop-blur-xl shadow-2xl text-white">
+                            <div className="flex items-center gap-4">
+                                <div className="bg-orange-600 p-3 rounded-2xl shadow-lg hover:rotate-12 transition-transform">
+                                    <Icon name="fas fa-tractor" className="text-xl" />
                                 </div>
-                                <div className="bg-orange-600/20 px-6 py-3 rounded-2xl border border-orange-500/30">
-                                    <p className="text-[10px] font-black opacity-50 uppercase">Hectáreas Totales</p>
-                                    <p className="text-2xl font-black text-white">{liquidacionAnalitica.hectareasAcumuladas.toLocaleString()} HAS</p>
+                                <div>
+                                    <h1 className="text-2xl font-black uppercase italic leading-none text-orange-500">La Fulmigadora</h1>
+                                    <div className="flex items-center gap-2 mt-1">
+                                        <div className={`w-2 h-2 rounded-full ${!cargandoNube ? 'bg-green-500 shadow-[0_0_8px_green]' : 'bg-red-500 animate-pulse'}`}></div>
+                                        <span className="text-[10px] font-bold uppercase tracking-widest text-white/60">
+                                            {!cargandoNube ? "Nube Conectada" : "Sincronizando..."}
+                                        </span>
+                                    </div>
                                 </div>
                             </div>
+                            
+                            <div className="flex flex-wrap gap-2 items-center">
+                                <button onClick={() => setMostrarConfigFondo(!mostrarConfigFondo)} className="bg-white/10 hover:bg-white/20 p-3 rounded-xl transition-colors border border-white/10">
+                                    <Icon name="fas fa-image" />
+                                </button>
 
-                            <div className="grid grid-cols-1 xl:grid-cols-3 gap-10">
-                                {/* Detalle por Empresa */}
-                                <div className="xl:col-span-2 space-y-4 scroll-pro max-h-[500px] overflow-y-auto pr-4">
-                                    {Object.keys(liquidacionAnalitica.mapaEmpresas).map(empKey => {
-                                        const dato = liquidacionAnalitica.mapaEmpresas[empKey];
-                                        return (
-                                            <div key={empKey} className="bg-white/5 p-6 rounded-[2rem] border border-white/5 flex flex-col sm:flex-row justify-between items-center gap-6">
-                                                <div className="flex-1">
-                                                    <h4 className="font-black text-white text-xl uppercase italic">{dato.nombreOriginal}</h4>
-                                                    <div className="flex gap-4 mt-1">
-                                                        <span className="text-[10px] font-black opacity-30 uppercase">{dato.hasTotal} HAS</span>
-                                                        <span className="text-[10px] font-black opacity-30 uppercase">Neto: ${dato.netoTotal.toLocaleString()}</span>
+                                <div className="flex gap-2 bg-black/40 p-1.5 rounded-xl border border-white/10">
+                                    <input type="text" placeholder="Nueva Temporada..." className="px-3 py-2 bg-white/5 text-white rounded-lg font-bold text-xs w-full md:w-40 border-none focus:ring-0 placeholder:text-white/30"
+                                        value={nuevaTemporadaNombre} onChange={(e) => setNuevaTemporadaNombre(e.target.value)} />
+                                    <button onClick={agregarTemporada} className="bg-green-600 text-white px-4 py-2 rounded-lg font-black text-xs hover:bg-green-500 transition-all active:scale-90">
+                                        <Icon name="fas fa-plus" />
+                                    </button>
+                                </div>
+                            </div>
+                        </header>
+
+                        {mostrarConfigFondo && (
+                            <div className="mb-6 bg-white/95 backdrop-blur-xl p-6 rounded-3xl shadow-2xl border border-white/50 animate-in fade-in slide-in-from-top-4 duration-300">
+                                <div className="flex justify-between items-center mb-4">
+                                    <h4 className="font-black uppercase italic text-slate-800">Ajustes de Fondo de Pantalla</h4>
+                                    <button onClick={() => setMostrarConfigFondo(false)} className="text-slate-400 hover:text-slate-600"><Icon name="fas fa-times"/></button>
+                                </div>
+                                <div className="grid md:grid-cols-2 gap-6">
+                                    <div className="space-y-4">
+                                        <label className="block p-4 border-2 border-dashed border-slate-200 rounded-2xl hover:bg-slate-50 cursor-pointer text-center transition-colors">
+                                            <Icon name="fas fa-cloud-upload-alt" className="text-2xl text-orange-500 mb-2 block" />
+                                            <span className="text-[10px] font-black uppercase text-slate-500">Cargar Imagen Nueva</span>
+                                            <input type="file" className="hidden" accept="image/*" onChange={manejarCargaFondo} />
+                                        </label>
+                                        {fondoConfig.url && (
+                                            <button onClick={() => setFondoConfig({...fondoConfig, url: null})} className="w-full py-2 text-[10px] font-black uppercase text-red-500 bg-red-50 rounded-xl">Quitar Fondo Actual</button>
+                                        )}
+                                    </div>
+                                    <div className="flex flex-col justify-center gap-3">
+                                        <label className="flex items-center justify-between p-3 bg-slate-50 rounded-xl cursor-pointer">
+                                            <span className="text-[10px] font-black uppercase text-slate-600">Mostrar en bloqueo</span>
+                                            <input type="checkbox" className="w-5 h-5 rounded accent-orange-600" checked={fondoConfig.enBloqueo} onChange={e => setFondoConfig({...fondoConfig, enBloqueo: e.target.checked})} />
+                                        </label>
+                                        <label className="flex items-center justify-between p-3 bg-slate-50 rounded-xl cursor-pointer">
+                                            <span className="text-[10px] font-black uppercase text-slate-600">Mostrar en panel</span>
+                                            <input type="checkbox" className="w-5 h-5 rounded accent-orange-600" checked={fondoConfig.enPanel} onChange={e => setFondoConfig({...fondoConfig, enPanel: e.target.checked})} />
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        <div className="space-y-4">
+                            {temporadas.map(temp => (
+                                <div key={temp.id} className="bg-white/90 backdrop-blur-xl rounded-[2.5rem] shadow-xl border border-white/40 overflow-hidden transition-all duration-300">
+                                    <div className={`p-6 flex items-center justify-between cursor-pointer ${temporadaActiva === temp.id ? 'bg-orange-600/5' : ''}`}
+                                        onClick={() => setTemporadaActiva(temporadaActiva === temp.id ? null : temp.id)}>
+                                        <div className="flex items-center gap-4">
+                                            <div className="w-12 h-12 bg-orange-100 rounded-2xl flex items-center justify-center text-orange-600 shadow-inner">
+                                                <Icon name="fas fa-layer-group" className="text-xl" />
+                                            </div>
+                                            <div>
+                                                <h3 className="font-black text-xl uppercase tracking-tighter text-slate-800">{temp.nombre}</h3>
+                                                <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">{temp.trabajos?.length || 0} Registros totales</span>
+                                            </div>
+                                        </div>
+                                        <div className="flex items-center gap-4">
+                                            <button onClick={(e) => { e.stopPropagation(); eliminarTemporada(temp.id); }} className="text-slate-300 hover:text-red-500 transition-colors p-2"><Icon name="fas fa-trash-alt" /></button>
+                                            <Icon name="fas fa-chevron-down" className={`text-slate-400 transition-transform duration-300 ${temporadaActiva === temp.id ? 'rotate-180' : ''}`} />
+                                        </div>
+                                    </div>
+
+                                    {temporadaActiva === temp.id && (
+                                        <div className="p-4 md:p-8 border-t border-slate-100 animate-in slide-in-from-top-2 duration-300">
+                                            {/* Formulario de Carga */}
+                                            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-2 bg-slate-50 p-4 rounded-3xl mb-6 shadow-inner">
+                                                {['Empresa', 'Campo', 'Lote', 'Chofer'].map(f => (
+                                                    <div key={f}>
+                                                        <label className="text-[8px] font-black text-slate-400 uppercase mb-1 block ml-1">{f}</label>
+                                                        <input type="text" className="w-full p-2.5 rounded-xl text-xs font-bold border-none shadow-sm focus:ring-2 focus:ring-orange-500"
+                                                            value={nuevoTrabajo[f.toLowerCase()]} onChange={(e) => setNuevoTrabajo({...nuevoTrabajo, [f.toLowerCase()]: e.target.value})} />
                                                     </div>
+                                                ))}
+                                                <div>
+                                                    <label className="text-[8px] font-black text-slate-400 uppercase mb-1 block ml-1">Has</label>
+                                                    <input type="number" className="w-full p-2.5 rounded-xl text-xs font-bold border-none shadow-sm"
+                                                        value={nuevoTrabajo.hectareas} onChange={(e) => setNuevoTrabajo({...nuevoTrabajo, hectareas: e.target.value})} />
                                                 </div>
-                                                <div className="flex items-center gap-6">
-                                                    <div className="bg-black/60 px-4 py-3 rounded-2xl border border-orange-500/40 flex items-center">
-                                                        <input 
-                                                            type="number" 
-                                                            className="bg-transparent w-12 text-center text-orange-500 font-black text-2xl outline-none"
-                                                            placeholder="0"
-                                                            value={comisionesConfig[empKey] || ''}
-                                                            onChange={v => setComisionesConfig({...comisionesConfig, [empKey]: v.target.value})}
-                                                        />
-                                                        <span className="text-xs font-black text-orange-500 ml-1">%</span>
-                                                    </div>
-                                                    <div className="text-right w-32">
-                                                        <p className="text-[9px] font-black opacity-20 uppercase">A Pagar</p>
-                                                        <p className="text-xl font-black text-green-400">
-                                                            ${((dato.netoTotal * (comisionesConfig[empKey] || 0)) / 100).toLocaleString()}
-                                                        </p>
-                                                    </div>
+                                                <div>
+                                                    <label className="text-[8px] font-black text-slate-400 uppercase mb-1 block ml-1">$ x Ha</label>
+                                                    <input type="number" className="w-full p-2.5 rounded-xl text-xs font-bold border-none shadow-sm"
+                                                        value={nuevoTrabajo.precioHectarea} onChange={(e) => setNuevoTrabajo({...nuevoTrabajo, precioHectarea: e.target.value})} />
+                                                </div>
+                                                <div>
+                                                    <label className="text-[8px] font-black text-blue-500 uppercase mb-1 block ml-1">IVA %</label>
+                                                    <input type="number" className="w-full p-2.5 rounded-xl text-xs font-bold border-none shadow-sm bg-blue-50/50"
+                                                        value={nuevoTrabajo.ivaPorcentaje} onChange={(e) => setNuevoTrabajo({...nuevoTrabajo, ivaPorcentaje: e.target.value})} />
+                                                </div>
+                                                <div className="flex items-end">
+                                                    <button onClick={() => agregarTrabajo(temp.id)} className="w-full bg-orange-600 text-white h-[40px] rounded-xl font-black text-[10px] uppercase shadow-lg active:scale-95 hover:bg-orange-500 transition-all">
+                                                        GUARDAR
+                                                    </button>
                                                 </div>
                                             </div>
-                                        );
-                                    })}
-                                </div>
 
-                                {/* Panel de Resultados Finales */}
-                                <div className="bg-gradient-to-b from-black/80 to-black/40 p-10 rounded-[3.5rem] border border-orange-500/20 flex flex-col justify-between shadow-inner">
-                                    <div className="space-y-6">
-                                        <div className="flex justify-between items-center">
-                                            <span className="text-xs font-black opacity-30 uppercase">Subtotal Comisión:</span>
-                                            <span className="text-xl font-black text-white">${liquidacionAnalitica.comisionBruta.toLocaleString()}</span>
-                                        </div>
-                                        <div className="flex justify-between items-center text-red-500">
-                                            <span className="text-xs font-black opacity-30 uppercase">Adelantos / Vales:</span>
-                                            <span className="text-xl font-black">-${liquidacionAnalitica.totalAdelantos.toLocaleString()}</span>
-                                        </div>
-                                        <div className="h-px bg-white/10 w-full my-4"></div>
-                                    </div>
-                                    
-                                    <div className="mt-12">
-                                        <p className="text-[11px] font-black opacity-30 uppercase tracking-[0.3em] mb-2">Neto Final a Liquidar</p>
-                                        <p className="text-6xl font-black text-white tracking-tighter shadow-orange-500/20 drop-shadow-2xl">
-                                            ${liquidacionAnalitica.saldoFinal.toLocaleString()}
-                                        </p>
-                                        <button className="w-full mt-10 bg-green-600/20 hover:bg-green-600 border border-green-500/30 text-green-400 hover:text-white font-black py-4 rounded-2xl transition-all uppercase text-xs tracking-widest">
-                                            Cerrar Liquidación
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        </section>
-                    )}
-
-                    {/* LISTADO DE TEMPORADAS Y CARGA */}
-                    <div className="space-y-12 pb-32">
-                        {temporadas.map(temp => (
-                            <div key={temp.id} className="tarjeta-maestra overflow-hidden">
-                                {/* Encabezado de Temporada */}
-                                <div 
-                                    className={`p-10 flex justify-between items-center cursor-pointer transition-all ${activeTempId === temp.id ? 'bg-orange-600/10' : 'hover:bg-white/5'}`}
-                                    onClick={() => setActiveTempId(activeTempId === temp.id ? null : temp.id)}
-                                >
-                                    <div className="flex items-center gap-6">
-                                        <div className={`w-12 h-12 rounded-xl flex items-center justify-center border ${activeTempId === temp.id ? 'border-orange-500 bg-orange-600/20 text-orange-500' : 'border-white/10 opacity-30'}`}>
-                                            <i className="fas fa-folder-open"></i>
-                                        </div>
-                                        <h3 className="text-3xl font-black uppercase italic tracking-tighter">{temp.nombre}</h3>
-                                    </div>
-                                    <div className="flex items-center gap-8">
-                                        <div className="hidden md:block text-right">
-                                            <p className="text-[10px] font-black opacity-20 uppercase">Registros</p>
-                                            <p className="font-black">{temp.trabajos?.length || 0}</p>
-                                        </div>
-                                        <i className={`fas fa-chevron-${activeTempId === temp.id ? 'up text-orange-500' : 'down opacity-20'}`}></i>
-                                    </div>
-                                </div>
-
-                                {activeTempId === temp.id && (
-                                    <div className="p-10 space-y-12 bg-black/40 animar-seccion">
-                                        
-                                        {/* FORMULARIO DE CARGA DE 7 CAMPOS (ESTRUCTURA ORIGINAL) */}
-                                        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4 bg-white/5 p-8 rounded-[2.5rem] border border-white/5 shadow-inner">
-                                            {[
-                                                {id:'empresa', label:'Empresa'}, {id:'campo', label:'Campo'}, {id:'lote', label:'Lote'}, 
-                                                {id:'chofer', label:'Chofer'}, {id:'has', label:'Has.'}, {id:'netoItem', label:'$ Neto'}, {id:'iva', label:'IVA %'}
-                                            ].map((campo, idx) => (
-                                                <div key={campo.id} className="flex flex-col gap-2">
-                                                    <label className="text-[10px] font-black opacity-30 uppercase ml-3">{campo.label}</label>
-                                                    <input 
-                                                        ref={el => inputRefs.current[idx] = el}
-                                                        type={idx >= 4 ? "number" : "text"}
-                                                        className="campo-carga"
-                                                        value={formData[campo.id]}
-                                                        onChange={e => setFormData({...formData, [campo.id]: e.target.value})}
-                                                        onKeyDown={e => handleKeyDown(e, idx, temp.id)}
-                                                    />
+                                            {/* Filtros */}
+                                            <div className="flex gap-4 mb-6">
+                                                <div className="relative">
+                                                    <Icon name="fas fa-search" className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-300 text-[10px]"/>
+                                                    <input type="text" placeholder="Filtrar Empresa..." className="pl-8 p-2 bg-white border border-slate-200 rounded-xl text-[10px] w-40 font-bold focus:ring-2 focus:ring-orange-500 focus:outline-none"
+                                                        value={filtroGlobal.empresa} onChange={(e) => setFiltroGlobal({...filtroGlobal, empresa: e.target.value})} />
                                                 </div>
-                                            ))}
-                                            <button 
-                                                onClick={() => guardarRegistroFirestore(temp.id)} 
-                                                className="btn-fulmi lg:col-span-7 mt-4 flex items-center justify-center gap-3"
-                                            >
-                                                <i className="fas fa-cloud-upload-alt"></i> Procesar y Guardar Registro
-                                            </button>
-                                        </div>
+                                                <div className="relative">
+                                                    <Icon name="fas fa-user" className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-300 text-[10px]"/>
+                                                    <input type="text" placeholder="Filtrar Chofer..." className="pl-8 p-2 bg-white border border-slate-200 rounded-xl text-[10px] w-40 font-bold focus:ring-2 focus:ring-orange-500 focus:outline-none"
+                                                        value={filtroGlobal.chofer} onChange={(e) => setFiltroGlobal({...filtroGlobal, chofer: e.target.value})} />
+                                                </div>
+                                            </div>
 
-                                        {/* TABLA DE REGISTROS CON CÁMARA */}
-                                        <div className="overflow-x-auto scroll-pro">
-                                            <table className="w-full border-separate border-spacing-y-4">
-                                                <thead>
-                                                    <tr className="text-[11px] font-black opacity-20 uppercase text-left tracking-[0.2em]">
-                                                        <th className="px-8 py-2">Detalle de Operación</th>
-                                                        <th className="px-8 py-2">Personal</th>
-                                                        <th className="px-8 py-2 text-right">Importe Neto</th>
-                                                        <th className="px-8 py-2 text-center">Remito</th>
-                                                        <th className="px-8 py-2 text-center">Estados</th>
-                                                        <th className="px-8 py-2"></th>
-                                                    </tr>
-                                                </thead>
-                                                <tbody>
-                                                    {temp.trabajos?.filter(x => x.chofer.toUpperCase().includes(filtroChofer.toUpperCase())).map(reg => (
-                                                        <tr key={reg.id} className={`tarjeta-maestra hover:bg-orange-600/5 transition-colors ${reg.esAdelanto ? 'border-yellow-500/30 bg-yellow-500/5' : ''}`}>
-                                                            <td className="p-8 rounded-l-[2.5rem]">
-                                                                <div className={`text-lg font-black uppercase italic ${reg.esAdelanto ? 'text-yellow-500' : 'text-orange-500'}`}>
-                                                                    {reg.esAdelanto ? 'Adelanto / Vale de Caja' : `${reg.empresa} - ${reg.lote}`}
-                                                                </div>
-                                                                <div className="flex gap-4 mt-2">
-                                                                    <span className="text-[10px] font-black opacity-40 uppercase"><i className="fas fa-calendar-day mr-1"></i> {reg.fecha}</span>
-                                                                    <span className="text-[10px] font-black opacity-40 uppercase"><i className="fas fa-map-marker-alt mr-1"></i> {reg.campo || 'N/A'}</span>
-                                                                </div>
-                                                            </td>
-                                                            <td className="p-8 font-black uppercase text-xs tracking-tighter text-white/80">{reg.chofer}</td>
-                                                            <td className={`p-8 text-right font-black text-2xl ${reg.esAdelanto ? 'text-yellow-500' : 'text-white'}`}>
-                                                                ${reg.netoCalculado.toLocaleString()}
-                                                            </td>
-                                                            <td className="p-8 text-center">
-                                                                <button className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 text-white/20 hover:text-orange-500 hover:border-orange-500 transition-all">
-                                                                    <i className="fas fa-camera text-xl"></i>
-                                                                </button>
-                                                            </td>
-                                                            <td className="p-8">
-                                                                <div className="flex justify-center gap-4">
-                                                                    <div className="flex flex-col items-center gap-1">
-                                                                        <button className={`w-10 h-10 rounded-xl border-2 flex items-center justify-center transition-all ${reg.estadoCobro ? 'bg-green-600 border-green-400 text-white shadow-lg shadow-green-900/40' : 'border-white/5 opacity-10 text-transparent'}`}><i className="fas fa-check text-xs"></i></button>
-                                                                        <span className="text-[8px] font-black opacity-20 uppercase">Cobro</span>
-                                                                    </div>
-                                                                    <div className="flex flex-col items-center gap-1">
-                                                                        <button className={`w-10 h-10 rounded-xl border-2 flex items-center justify-center transition-all ${reg.estadoPago ? 'bg-blue-600 border-blue-400 text-white shadow-lg shadow-blue-900/40' : 'border-white/5 opacity-10 text-transparent'}`}><i className="fas fa-check text-xs"></i></button>
-                                                                        <span className="text-[8px] font-black opacity-20 uppercase">Pago</span>
-                                                                    </div>
-                                                                </div>
-                                                            </td>
-                                                            <td className="p-8 rounded-r-[2.5rem] text-right">
-                                                                <button 
-                                                                    onClick={async() => { if(confirm('¿ELIMINAR REGISTRO?')) { const filtrados = temp.trabajos.filter(x => x.id !== reg.id); await db.collection('temporadas').doc(temp.id).update({ trabajos: filtrados }); } }}
-                                                                    className="text-white/5 hover:text-red-500 p-4 transition-colors"
-                                                                >
-                                                                    <i className="fas fa-trash-alt"></i>
-                                                                </button>
-                                                            </td>
-                                                        </tr>
-                                                    ))}
-                                                </tbody>
-                                            </table>
+                                            {/* Listado de Grupos */}
+                                            <div className="space-y-6">
+                                                {obtenerGrupos(temp.trabajos).map((g, idx) => (
+                                                    <div key={idx} className="border border-slate-200 rounded-3xl overflow-hidden bg-white shadow-sm hover:shadow-md transition-shadow">
+                                                        <div className="bg-slate-900 p-4 flex justify-between items-center text-white text-[10px] font-black uppercase tracking-widest">
+                                                            <div className="flex items-center gap-2">
+                                                                <Icon name="fas fa-map-pin" className="text-orange-500" />
+                                                                {g.empresa} <span className="text-white/30 px-1">|</span> {g.campo}
+                                                            </div>
+                                                            <div className="flex gap-6">
+                                                                <span>Total Has: {g.has.toLocaleString()}</span>
+                                                                <span className="text-orange-400">Total: ${g.total.toLocaleString()}</span>
+                                                            </div>
+                                                        </div>
+                                                        <div className="overflow-x-auto">
+                                                            <table className="w-full text-[10px]">
+                                                                <thead className="bg-slate-50 border-b border-slate-100 text-slate-400">
+                                                                    <tr>
+                                                                        <th className="p-4 text-left">FECHA</th>
+                                                                        <th className="p-4 text-left">LOTE</th>
+                                                                        <th className="p-4 text-left">CHOFER</th>
+                                                                        <th className="p-4 text-right">IVA</th>
+                                                                        <th className="p-4 text-right">TOTAL FINAL</th>
+                                                                        <th className="p-4 text-center">REMITO</th>
+                                                                        <th className="p-4 text-center">COBRADO</th>
+                                                                        <th className="p-4 text-center">PAGADO</th>
+                                                                        <th className="p-4 text-right">ACCIONES</th>
+                                                                    </tr>
+                                                                </thead>
+                                                                <tbody className="divide-y divide-slate-50">
+                                                                    {g.items.map(tr => (
+                                                                        <tr key={tr.id} className="hover:bg-slate-50/50 transition-colors">
+                                                                            <td className="p-4 text-slate-400">{tr.fecha}</td>
+                                                                            <td className="p-4 font-bold uppercase">{tr.lote}</td>
+                                                                            <td className="p-4"><span className="bg-orange-100 text-orange-700 px-2 py-1 rounded-lg font-black">{tr.chofer}</span></td>
+                                                                            <td className="p-4 text-right text-blue-500 font-bold">${tr.ivaValor?.toLocaleString() || 0}</td>
+                                                                            <td className="p-4 text-right font-black text-slate-800">${tr.totalFinal.toLocaleString()}</td>
+                                                                            <td className="p-4 text-center">
+                                                                                {tr.remito ? (
+                                                                                    <a href={tr.remito} target="_blank" className="text-orange-500 hover:text-orange-700 text-lg">
+                                                                                        <Icon name="fas fa-file-invoice" />
+                                                                                    </a>
+                                                                                ) : (
+                                                                                    <label className="cursor-pointer text-slate-300 hover:text-orange-500 transition-colors">
+                                                                                        <Icon name="fas fa-camera" className="text-lg" />
+                                                                                        <input type="file" className="hidden" accept="image/*" onChange={(e) => manejarRemito(e, temp.id, tr.id)} />
+                                                                                    </label>
+                                                                                )}
+                                                                            </td>
+                                                                            <td className="p-4 text-center">
+                                                                                <button onClick={() => toggleEstado(temp.id, tr.id, 'cobradoAEmpresa')} 
+                                                                                    className={`w-8 h-8 rounded-full border transition-all flex items-center justify-center ${tr.cobradoAEmpresa ? 'bg-green-500 border-green-500 text-white shadow-lg' : 'text-slate-200 border-slate-200'}`}>
+                                                                                    <Icon name="fas fa-check" className="text-[10px]" />
+                                                                                </button>
+                                                                            </td>
+                                                                            <td className="p-4 text-center">
+                                                                                <button onClick={() => toggleEstado(temp.id, tr.id, 'pagadoAChofer')} 
+                                                                                    className={`w-8 h-8 rounded-full border transition-all flex items-center justify-center ${tr.pagadoAChofer ? 'bg-blue-500 border-blue-500 text-white shadow-lg' : 'text-slate-200 border-slate-200'}`}>
+                                                                                    <Icon name="fas fa-check" className="text-[10px]" />
+                                                                                </button>
+                                                                            </td>
+                                                                            <td className="p-4 text-right">
+                                                                                <button onClick={() => eliminarTrabajo(temp.id, tr.id)} className="text-slate-200 hover:text-red-500 p-2 transition-colors"><Icon name="fas fa-trash-alt" /></button>
+                                                                            </td>
+                                                                        </tr>
+                                                                    ))}
+                                                                </tbody>
+                                                            </table>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
                                         </div>
-                                    </div>
-                                )}
-                            </div>
-                        ))}
+                                    )}
+                                </div>
+                            ))}
+                        </div>
                     </div>
                 </div>
             );
         };
 
         const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(<LaFulmigadoraApp />);
+        root.render(<App />);
     </script>
 </body>
 </html>
