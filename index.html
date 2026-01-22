@@ -3,12 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>La Fulmigadora - Gestión Profesional Completa v3.5</title>
+    <title>La Fulmigadora - Gestión Profesional v4.0</title>
     
     <script src="https://www.gstatic.com/firebasejs/11.1.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/11.1.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore-compat.js"></script>
-    
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -18,26 +17,24 @@
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;900&display=swap');
         
-        /* Configuración de Variables de Diseño */
         :root {
-            --color-naranja: #ea580c;
-            --color-fondo: #020617;
-            --cristal-fondo: rgba(255, 255, 255, 0.03);
-            --cristal-borde: rgba(255, 255, 255, 0.08);
-            --cristal-blur: blur(20px);
+            --naranja: #ea580c;
+            --oscuro: #020617;
+            --cristal: rgba(255, 255, 255, 0.04);
+            --borde: rgba(255, 255, 255, 0.1);
         }
 
         body { 
             font-family: 'Inter', sans-serif; 
-            background-color: var(--color-fondo); 
-            color: #f8fafc; 
-            margin: 0;
+            background-color: var(--oscuro); 
+            color: #f1f5f9; 
+            margin: 0; 
             min-height: 100vh;
             overflow-x: hidden;
         }
 
-        /* Capa de fondo de pantalla persistente */
-        .capa-fondo {
+        /* FONDO DINÁMICO */
+        .fondo-sistema {
             position: fixed;
             top: 0;
             left: 0;
@@ -46,77 +43,61 @@
             z-index: -10;
             background-size: cover;
             background-position: center;
-            opacity: 0.3;
-            transition: opacity 0.5s ease;
+            transition: opacity 0.8s ease;
         }
 
-        /* Estilos de Tarjetas tipo Cristal */
-        .tarjeta-cristal {
-            background: var(--cristal-fondo);
-            backdrop-filter: var(--cristal-blur);
-            -webkit-backdrop-filter: var(--cristal-blur);
-            border: 1px solid var(--cristal-borde);
+        /* TARJETAS ESTILO CRISTAL */
+        .card-cristal {
+            background: var(--cristal);
+            backdrop-filter: blur(25px);
+            -webkit-backdrop-filter: blur(25px);
+            border: 1px solid var(--borde);
             border-radius: 2.5rem;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            box-shadow: 0 15px 35px rgba(0,0,0,0.4);
         }
 
-        /* Inputs Personalizados */
-        .entrada-texto {
-            background: rgba(0, 0, 0, 0.5);
+        /* INPUTS PERSONALIZADOS */
+        .input-fulmi {
+            background: rgba(0, 0, 0, 0.6);
             border: 1px solid rgba(255, 255, 255, 0.1);
             color: white;
-            border-radius: 1rem;
+            border-radius: 1.2rem;
             padding: 1rem;
-            font-size: 0.85rem;
             font-weight: 600;
+            font-size: 0.9rem;
             width: 100%;
             outline: none;
             transition: all 0.3s;
         }
 
-        .entrada-texto:focus {
-            border-color: var(--color-naranja);
-            background: rgba(0, 0, 0, 0.7);
-            box-shadow: 0 0 15px rgba(234, 88, 12, 0.2);
+        .input-fulmi:focus {
+            border-color: var(--naranja);
+            box-shadow: 0 0 20px rgba(234, 88, 12, 0.25);
         }
 
-        /* Botones Profesionales */
-        .boton-naranja {
-            background: var(--color-naranja);
+        /* BOTONES */
+        .btn-principal {
+            background: var(--naranja);
             color: white;
             font-weight: 900;
             text-transform: uppercase;
-            padding: 1rem;
-            border-radius: 1.2rem;
-            cursor: pointer;
+            padding: 1.2rem;
+            border-radius: 1.5rem;
+            box-shadow: 0 8px 20px rgba(234, 88, 12, 0.3);
             transition: all 0.2s;
-            box-shadow: 0 4px 15px rgba(234, 88, 12, 0.3);
         }
 
-        .boton-naranja:active {
-            transform: scale(0.95);
-        }
+        .btn-principal:active { transform: scale(0.96); }
 
-        /* Scrollbar Estilizada */
-        .scroll-fino::-webkit-scrollbar {
-            width: 5px;
-            height: 5px;
-        }
+        /* SCROLL */
+        .custom-scroll::-webkit-scrollbar { width: 6px; height: 6px; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 10px; }
 
-        .scroll-fino::-webkit-scrollbar-thumb {
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 10px;
-        }
-
-        /* Animaciones */
-        .animacion-suave {
-            animation: aparecer 0.4s ease-out forwards;
-        }
-
-        @keyframes aparecer {
-            from { opacity: 0; transform: translateY(15px); }
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(20px); }
             to { opacity: 1; transform: translateY(0); }
         }
+        .animar { animation: slideIn 0.4s ease-out forwards; }
     </style>
 </head>
 <body>
@@ -125,8 +106,7 @@
     <script type="text/babel">
         const { useState, useEffect, useMemo, useRef } = React;
 
-        // CONFIGURACIÓN OFICIAL DE FIREBASE
-        const configuracionFB = {
+        const firebaseConfig = {
             apiKey: "AIzaSyC0jIDWwzWFgugZpY8mhOFZEh-ZAUhed7Y",
             authDomain: "la-fulmigadora.firebaseapp.com",
             projectId: "la-fulmigadora",
@@ -135,177 +115,78 @@
             appId: "1:235458080625:web:61ea831d6620f1ecde10d0"
         };
 
-        // Inicialización de Servicios
-        if (!firebase.apps.length) firebase.initializeApp(configuracionFB);
+        if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
         const auth = firebase.auth();
 
-        const LaFulmigadoraApp = () => {
-            // ESTADOS GLOBALES
+        const AppLaFulmigadora = () => {
             const [acceso, setAcceso] = useState(false);
-            const [claveIngresada, setClaveIngresada] = useState('');
-            const [listadoTemporadas, setListadoTemporadas] = useState([]);
-            const [idTempActiva, setIdTempActiva] = useState(null);
-            const [busquedaChofer, setBusquedaChofer] = useState('');
-            const [porcentajesPorEmpresa, setPorcentajesPorEmpresa] = useState({});
-            const [imagenFondo, setImagenFondo] = useState(() => JSON.parse(localStorage.getItem('bg_fulmi_v35') || '{"url":null}'));
-            
-            // ESTADO DE NUEVO REGISTRO
-            const [formRegistro, setFormRegistro] = useState({ 
-                empresa: '', campo: '', lote: '', chofer: '', hectareas: '', precio: '', iva: '0' 
-            });
+            const [temporadas, setTemporadas] = useState([]);
+            const [idActiva, setIdActiva] = useState(null);
+            const [filtro, setFiltro] = useState('');
+            const [pcts, setPcts] = useState({});
+            const [verConfig, setVerConfig] = useState(false);
+            const [bg, setBg] = useState(() => JSON.parse(localStorage.getItem('fulmi_config_v4') || '{"url":"https://images.unsplash.com/photo-1516975080664-ed2fc6a32937?q=80&w=2070", "op":0.25}'));
+            const [form, setForm] = useState({ empresa: '', campo: '', lote: '', chofer: '', has: '', precio: '', iva: '0' });
 
-            // REFERENCIAS PARA NAVEGACIÓN CON ENTER
-            const refsInputs = useRef([]);
+            const inputsRef = useRef([]);
 
-            // CARGA INICIAL DE DATOS
             useEffect(() => {
-                auth.signInAnonymously().catch(error => console.error("Error Auth:", error));
-                
-                const desvincular = db.collection('temporadas')
-                    .orderBy('fechaCreacion', 'desc')
-                    .onSnapshot(snapshot => {
-                        const datos = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                        setListadoTemporadas(datos);
-                    });
-                
-                return () => desvincular();
+                auth.signInAnonymously();
+                const u = db.collection('temporadas').orderBy('fechaCreacion', 'desc').onSnapshot(s => {
+                    setTemporadas(s.docs.map(d => ({ id: d.id, ...d.data() })));
+                });
+                return () => u();
             }, []);
 
-            // PERSISTENCIA DE FONDO
-            useEffect(() => {
-                localStorage.setItem('bg_fulmi_v35', JSON.stringify(imagenFondo));
-            }, [imagenFondo]);
+            useEffect(() => { localStorage.setItem('fulmi_config_v4', JSON.stringify(bg)); }, [bg]);
 
-            // LÓGICA DE NAVEGACIÓN POR TECLADO (ENTER)
-            const alPresionarEnter = (e, posicion, tId) => {
+            const saltarEnter = (e, i, tId) => {
                 if (e.key === 'Enter') {
                     e.preventDefault();
-                    if (posicion < 6) {
-                        refsInputs.current[posicion + 1].focus();
-                    } else {
-                        ejecutarGuardado(tId);
-                    }
+                    if (i < 6) inputsRef.current[i + 1].focus();
+                    else guardarRegistro(tId);
                 }
             };
 
-            // FUNCIÓN DE GUARDADO DE TRABAJO O ADELANTO
-            const ejecutarGuardado = async (temporadaId) => {
-                if (!formRegistro.chofer || !formRegistro.precio) {
-                    alert("El Chofer y el Importe son obligatorios.");
-                    return;
-                }
+            const guardarRegistro = async (id) => {
+                if (!form.chofer || !form.precio) return;
+                const adelanto = form.empresa === '' && form.campo === '';
+                const netoVal = adelanto ? parseFloat(form.precio) : (parseFloat(form.has || 0) * parseFloat(form.precio || 0));
+                const totalVal = adelanto ? netoVal : netoVal * (1 + (parseFloat(form.iva || 0) / 100));
 
-                // Si no hay empresa ni campo, se detecta como ADELANTO automáticamente
-                const esUnAdelanto = formRegistro.empresa.trim() === '' && formRegistro.campo.trim() === '';
-                
-                let valorNeto = 0;
-                let valorTotal = 0;
-
-                if (esUnAdelanto) {
-                    valorNeto = parseFloat(formRegistro.precio);
-                    valorTotal = valorNeto; // Adelantos no llevan IVA
-                } else {
-                    valorNeto = parseFloat(formRegistro.hectareas || 0) * parseFloat(formRegistro.precio || 0);
-                    const factorIVA = 1 + (parseFloat(formRegistro.iva || 0) / 100);
-                    valorTotal = valorNeto * factorIVA;
-                }
-
-                const nuevoDocumento = {
-                    id: Date.now().toString(),
-                    empresa: formRegistro.empresa.toUpperCase(),
-                    campo: formRegistro.campo.toUpperCase(),
-                    lote: formRegistro.lote.toUpperCase(),
-                    chofer: formRegistro.chofer.toUpperCase(),
-                    hectareas: formRegistro.hectareas,
-                    precio: formRegistro.precio,
-                    iva: formRegistro.iva,
-                    neto: valorNeto,
-                    total: valorTotal,
-                    esAdelanto: esUnAdelanto,
-                    fecha: new Date().toLocaleDateString(),
-                    cobrado: false,
-                    pagado: false
-                };
-
-                try {
-                    await db.collection('temporadas').doc(temporadaId).update({
-                        trabajos: firebase.firestore.FieldValue.arrayUnion(nuevoDocumento)
-                    });
-                    
-                    // Limpiar formulario manteniendo el chofer para carga rápida
-                    setFormRegistro({ 
-                        ...formRegistro, empresa: '', campo: '', lote: '', hectareas: '', precio: '', iva: '0' 
-                    });
-                    
-                    // Volver el foco al primer input
-                    if (refsInputs.current[0]) refsInputs.current[0].focus();
-                } catch (err) {
-                    console.error("Error al guardar:", err);
-                }
+                const item = { ...form, id: Date.now().toString(), neto: netoVal, total: totalVal, esAdelanto: adelanto, fecha: new Date().toLocaleDateString(), cobrado: false, pagado: false, img: null };
+                await db.collection('temporadas').doc(id).update({ trabajos: firebase.firestore.FieldValue.arrayUnion(item) });
+                setForm({ ...form, empresa: '', campo: '', lote: '', has: '', precio: '', iva: '0' });
+                inputsRef.current[0].focus();
             };
 
-            // MESA DE CÁLCULO DE LIQUIDACIÓN DINÁMICA
-            const mesaCalculo = useMemo(() => {
-                if (!idTempActiva || !busquedaChofer) return null;
-                
-                const tempActual = listadoTemporadas.find(t => t.id === idTempActiva);
-                if (!tempActual || !tempActual.trabajos) return null;
-
-                const filtrados = tempActual.trabajos.filter(tr => 
-                    tr.chofer.toUpperCase().includes(busquedaChofer.toUpperCase())
-                );
-
-                const gruposEmpresa = {};
-                const listaAdelantos = [];
-                let hectareasTotalesChofer = 0;
-
-                filtrados.forEach(tr => {
-                    if (tr.esAdelanto) {
-                        listaAdelantos.push(tr);
-                    } else {
-                        if (!gruposEmpresa[tr.empresa]) {
-                            gruposEmpresa[tr.empresa] = { sumaNeto: 0, sumaHas: 0 };
-                        }
-                        gruposEmpresa[tr.empresa].sumaNeto += tr.neto;
-                        gruposEmpresa[tr.empresa].sumaHas += parseFloat(tr.hectareas || 0);
-                        hectareasTotalesChofer += parseFloat(tr.hectareas || 0);
+            const mesa = useMemo(() => {
+                if (!idActiva || !filtro) return null;
+                const t = temporadas.find(x => x.id === idActiva);
+                const items = t?.trabajos?.filter(tr => tr.chofer.toUpperCase().includes(filtro.toUpperCase())) || [];
+                const emps = {};
+                const ads = [];
+                items.forEach(tr => {
+                    if (tr.esAdelanto) ads.push(tr);
+                    else {
+                        if (!emps[tr.empresa]) emps[tr.empresa] = { neto: 0, has: 0 };
+                        emps[tr.empresa].neto += tr.neto;
+                        emps[tr.empresa].has += parseFloat(tr.has || 0);
                     }
                 });
+                let sumComis = 0;
+                Object.keys(emps).forEach(k => { sumComis += (emps[k].neto * ((pcts[k] || 0) / 100)); });
+                const sumAds = ads.reduce((s, c) => s + c.neto, 0);
+                return { emps, sumComis, sumAds, saldo: sumComis - sumAds };
+            }, [temporadas, idActiva, filtro, pcts]);
 
-                // Cálculo de comisiones basado en los inputs de la mesa
-                let acumuladoComisiones = 0;
-                Object.keys(gruposEmpresa).forEach(nombreEmp => {
-                    const pct = porcentajesPorEmpresa[nombreEmp] || 0;
-                    acumuladoComisiones += (gruposEmpresa[nombreEmp].sumaNeto * (pct / 100));
-                });
-
-                const acumuladoAdelantos = listaAdelantos.reduce((acc, curr) => acc + curr.neto, 0);
-
-                return {
-                    gruposEmpresa,
-                    listaAdelantos,
-                    hectareasTotalesChofer,
-                    acumuladoComisiones,
-                    acumuladoAdelantos,
-                    montoFinalAPagar: acumuladoComisiones - acumuladoAdelantos
-                };
-            }, [listadoTemporadas, idTempActiva, busquedaChofer, porcentajesPorEmpresa]);
-
-            // PANTALLA DE BLOQUEO
             if (!acceso) {
                 return (
                     <div className="h-screen flex items-center justify-center bg-slate-950 px-6">
-                        <div className="tarjeta-cristal p-12 w-full max-w-sm text-center">
-                            <i className="fas fa-lock text-orange-500 text-4xl mb-6"></i>
-                            <h2 className="text-2xl font-black mb-8 italic uppercase tracking-tighter">Acceso de Seguridad</h2>
-                            <input 
-                                type="password" 
-                                placeholder="INGRESE LA CLAVE" 
-                                className="entrada-texto text-center mb-6 text-xl tracking-widest"
-                                onChange={(e) => e.target.value === '1986' && setAcceso(true)}
-                            />
-                            <p className="text-[10px] opacity-20 font-black uppercase tracking-[0.3em]">La Fulmigadora v3.5</p>
+                        <div className="card-cristal p-12 w-full max-w-sm text-center">
+                            <h2 className="text-3xl font-black mb-8 italic text-orange-500 uppercase">Seguridad</h2>
+                            <input type="password" placeholder="CLAVE" className="input-fulmi text-center text-2xl" onChange={e => e.target.value === '1986' && setAcceso(true)} />
                         </div>
                     </div>
                 );
@@ -313,214 +194,133 @@
 
             return (
                 <div className="min-h-screen p-4 md:p-10 relative">
-                    <div className="capa-fondo" style={{backgroundImage: `url(${imagenFondo.url})`}}></div>
+                    <div className="fondo-sistema" style={{backgroundImage: `url(${bg.url})`, opacity: bg.op}}></div>
                     
-                    {/* ENCABEZADO PRINCIPAL */}
-                    <header className="tarjeta-cristal p-8 mb-10 flex flex-col md:flex-row justify-between items-center gap-6">
+                    <header className="card-cristal p-8 mb-8 flex flex-col md:flex-row justify-between items-center gap-6">
                         <div className="flex items-center gap-5">
-                            <div className="bg-orange-600 w-16 h-16 rounded-2xl flex items-center justify-center shadow-lg shadow-orange-900/40">
-                                <i className="fas fa-truck-monster text-white text-2xl"></i>
-                            </div>
+                            <div className="bg-orange-600 w-16 h-16 rounded-3xl flex items-center justify-center shadow-lg"><i className="fas fa-gas-pump text-white text-2xl"></i></div>
                             <div>
-                                <h1 className="text-3xl font-black italic text-orange-500 uppercase leading-none">LA FULMIGADORA</h1>
-                                <p className="text-[10px] font-black opacity-30 tracking-[0.2em] mt-1 uppercase">Sistema de Gestión de Transporte</p>
+                                <h1 className="text-3xl font-black italic text-orange-500">LA FULMIGADORA</h1>
+                                <p className="text-[10px] font-black opacity-30 uppercase tracking-[0.3em]">Gestión de Flota e Importes</p>
                             </div>
                         </div>
-                        <div className="w-full md:w-80 relative">
-                            <i className="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 opacity-30"></i>
-                            <input 
-                                type="text" 
-                                placeholder="FILTRAR POR CHOFER..." 
-                                className="entrada-texto pl-12 border-orange-500/20"
-                                onChange={(e) => setBusquedaChofer(e.target.value)}
-                            />
+                        <div className="flex gap-4 w-full md:w-auto">
+                            <input type="text" placeholder="BUSCAR CHOFER PARA LIQUIDAR..." className="input-fulmi md:w-80 border-orange-500/30" onChange={e => setFiltro(e.target.value)} />
+                            <button onClick={() => setVerConfig(!verConfig)} className="bg-white/5 w-14 h-14 rounded-2xl flex items-center justify-center border border-white/10 hover:bg-orange-600 transition-all"><i className="fas fa-cog"></i></button>
                         </div>
                     </header>
 
-                    {/* SECCIÓN MESA DE CÁLCULO DE LIQUIDACIÓN */}
-                    {mesaCalculo && busquedaChofer && (
-                        <section className="tarjeta-cristal p-10 mb-10 border-orange-500/30 animacion-suave">
-                            <div className="flex items-center gap-4 mb-8">
-                                <span className="bg-orange-600 text-[10px] font-black px-3 py-1 rounded-full">LIVE</span>
-                                <h2 className="text-xl font-black uppercase italic">Mesa de Liquidación: {busquedaChofer}</h2>
+                    {verConfig && (
+                        <div className="card-cristal p-8 mb-8 animar">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div><label className="text-[10px] font-black opacity-40 uppercase ml-2">URL del Fondo</label>
+                                <input type="text" className="input-fulmi" value={bg.url} onChange={e => setBg({...bg, url: e.target.value})} /></div>
+                                <div><label className="text-[10px] font-black opacity-40 uppercase ml-2">Opacidad ({bg.op})</label>
+                                <input type="range" min="0" max="1" step="0.05" className="w-full mt-4" value={bg.op} onChange={e => setBg({...bg, op: e.target.value})} /></div>
                             </div>
-                            
+                        </div>
+                    )}
+
+                    {mesa && filtro && (
+                        <section className="card-cristal p-10 mb-10 border-orange-500/40 animar">
+                            <h2 className="text-xl font-black uppercase mb-8 italic text-orange-500">Mesa de Liquidación Dinámica: {filtro}</h2>
                             <div className="grid grid-cols-1 xl:grid-cols-3 gap-10">
-                                {/* Columna de Empresas y Porcentajes */}
                                 <div className="xl:col-span-2 space-y-4">
-                                    <p className="text-[10px] font-black opacity-40 uppercase tracking-widest mb-4">Detalle por Empresa (S/ Neto):</p>
-                                    {Object.keys(mesaCalculo.gruposEmpresa).map(empKey => (
-                                        <div key={empKey} className="bg-white/5 p-6 rounded-[1.5rem] flex flex-col md:flex-row justify-between items-center gap-4 border border-white/5 hover:bg-white/10 transition-all">
+                                    {Object.keys(mesa.emps).map(e => (
+                                        <div key={e} className="bg-white/5 p-6 rounded-[2rem] border border-white/5 flex justify-between items-center">
                                             <div>
-                                                <h4 className="font-black text-orange-500 text-lg uppercase leading-none">{empKey}</h4>
-                                                <p className="text-xs font-bold opacity-50 mt-1 uppercase">{mesaCalculo.gruposEmpresa[empKey].sumaHas} Hectáreas en total</p>
+                                                <h4 className="font-black text-white uppercase text-lg">{e}</h4>
+                                                <p className="text-xs opacity-40 font-bold uppercase">{mesa.emps[e].has} HAS | Neto: ${mesa.emps[e].neto.toLocaleString()}</p>
                                             </div>
                                             <div className="flex items-center gap-6">
-                                                <div className="text-right">
-                                                    <p className="text-[9px] font-black opacity-30 uppercase">Valor Neto</p>
-                                                    <p className="text-xl font-black">${mesaCalculo.gruposEmpresa[empKey].sumaNeto.toLocaleString()}</p>
-                                                </div>
-                                                <div className="flex items-center bg-black/40 p-2 rounded-xl border border-orange-500/30">
-                                                    <input 
-                                                        type="number" 
-                                                        className="bg-transparent w-12 text-center text-orange-500 font-black text-lg outline-none"
-                                                        placeholder="0"
-                                                        value={porcentajesPorEmpresa[empKey] || ''}
-                                                        onChange={(e) => setPorcentajesPorEmpresa({...porcentajesPorEmpresa, [empKey]: e.target.value})}
-                                                    />
+                                                <div className="bg-black/40 p-2 rounded-xl border border-orange-500/30 flex items-center">
+                                                    <input type="number" className="bg-transparent w-12 text-center text-orange-500 font-black text-xl outline-none" placeholder="0" value={pcts[e] || ''} onChange={v => setPcts({...pcts, [e]: v.target.value})} />
                                                     <span className="text-xs font-black text-orange-500 mr-2">%</span>
                                                 </div>
-                                                <div className="w-32 text-right">
-                                                    <p className="text-[9px] font-black opacity-30 uppercase">Comisión</p>
-                                                    <p className="text-xl font-black text-green-400">
-                                                        ${((mesaCalculo.gruposEmpresa[empKey].sumaNeto * (porcentajesPorEmpresa[empKey] || 0)) / 100).toLocaleString()}
-                                                    </p>
-                                                </div>
+                                                <p className="text-xl font-black text-green-400 w-32 text-right">${((mesa.emps[e].neto * (pcts[e] || 0)) / 100).toLocaleString()}</p>
                                             </div>
                                         </div>
                                     ))}
                                 </div>
-
-                                {/* Columna de Totales Finales */}
-                                <div className="bg-black/50 p-8 rounded-[2.5rem] border border-white/5 flex flex-col justify-between shadow-inner">
-                                    <div className="space-y-6">
-                                        <div className="flex justify-between items-end border-b border-white/5 pb-4">
-                                            <span className="text-xs font-black opacity-40 uppercase">Suma Comisiones:</span>
-                                            <span className="text-xl font-black text-green-400">${mesaCalculo.acumuladoComisiones.toLocaleString()}</span>
-                                        </div>
-                                        <div className="flex justify-between items-end border-b border-white/5 pb-4">
-                                            <span className="text-xs font-black opacity-40 uppercase">Adelantos a Restar:</span>
-                                            <span className="text-xl font-black text-red-500">-${mesaCalculo.acumuladoAdelantos.toLocaleString()}</span>
-                                        </div>
-                                        <div className="flex justify-between items-end">
-                                            <span className="text-xs font-black opacity-40 uppercase">Has Totales:</span>
-                                            <span className="text-xl font-black text-orange-500">{mesaCalculo.hectareasTotalesChofer}</span>
-                                        </div>
+                                <div className="bg-black/60 p-8 rounded-[3rem] border border-orange-500/20 flex flex-col justify-between shadow-2xl">
+                                    <div className="space-y-4">
+                                        <div className="flex justify-between text-xs opacity-50 uppercase"><span>Subtotal Comis:</span><span className="font-black text-white">${mesa.sumComis.toLocaleString()}</span></div>
+                                        <div className="flex justify-between text-xs opacity-50 uppercase text-red-400"><span>Adelantos:</span><span className="font-black">-${mesa.sumAds.toLocaleString()}</span></div>
                                     </div>
-                                    <div className="mt-12 text-right">
-                                        <p className="text-xs font-black opacity-30 uppercase tracking-[0.2em] mb-1">Total Neto a Liquidar</p>
-                                        <p className="text-5xl font-black text-white tracking-tighter">${mesaCalculo.montoFinalAPagar.toLocaleString()}</p>
+                                    <div className="text-right mt-10">
+                                        <p className="text-[10px] font-black opacity-30 uppercase tracking-widest">Saldo a Pagar</p>
+                                        <p className="text-5xl font-black text-white">${mesa.saldo.toLocaleString()}</p>
                                     </div>
                                 </div>
                             </div>
                         </section>
                     )}
 
-                    {/* LISTADO DE TEMPORADAS Y CARGA */}
-                    <main className="space-y-10 pb-32">
-                        {listadoTemporadas.map(temporada => (
-                            <div key={temporada.id} className="tarjeta-cristal overflow-hidden shadow-2xl">
-                                {/* Cabecera de Temporada */}
-                                <div 
-                                    className={`p-8 flex justify-between items-center cursor-pointer transition-all ${idTempActiva === temporada.id ? 'bg-orange-600/10' : 'hover:bg-white/5'}`}
-                                    onClick={() => setIdTempActiva(idTempActiva === temporada.id ? null : temporada.id)}
-                                >
-                                    <div className="flex items-center gap-6">
-                                        <div className={`w-14 h-14 rounded-2xl flex items-center justify-center border-2 ${idTempActiva === temporada.id ? 'bg-orange-600 border-orange-400 text-white' : 'border-white/10 text-white/20'}`}>
-                                            <i className="fas fa-folder-open text-xl"></i>
-                                        </div>
-                                        <h3 className="text-2xl font-black uppercase italic tracking-tighter">{temporada.nombre}</h3>
+                    <div className="space-y-10 pb-20">
+                        {temporadas.map(t => (
+                            <div key={t.id} className="card-cristal overflow-hidden">
+                                <div className={`p-8 flex justify-between items-center cursor-pointer ${idActiva === t.id ? 'bg-orange-600/10' : 'hover:bg-white/5'}`} onClick={() => setIdActiva(idActiva === t.id ? null : t.id)}>
+                                    <div className="flex items-center gap-5">
+                                        <i className={`fas fa-folder-open text-2xl ${idActiva === t.id ? 'text-orange-500' : 'opacity-20'}`}></i>
+                                        <h3 className="text-2xl font-black uppercase italic">{t.nombre}</h3>
                                     </div>
-                                    <i className={`fas fa-chevron-${idTempActiva === temporada.id ? 'up text-orange-500' : 'down opacity-20'} text-2xl`}></i>
+                                    <i className={`fas fa-chevron-${idActiva === t.id ? 'up text-orange-500' : 'down opacity-10'}`}></i>
                                 </div>
 
-                                {idTempActiva === temporada.id && (
-                                    <div className="p-8 space-y-10 bg-black/30 animacion-suave">
-                                        
-                                        {/* Formulario de Carga Ágil */}
-                                        <div className="bg-white/5 p-8 rounded-[2rem] border border-white/5">
-                                            <p className="text-[10px] font-black opacity-30 uppercase tracking-widest mb-6 italic">Cargar Trabajo (o dejar Empresa/Campo vacío para Adelantos)</p>
-                                            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4">
-                                                <div className="space-y-1">
-                                                    <span className="text-[9px] font-black opacity-30 ml-2 uppercase">Empresa</span>
-                                                    <input ref={el => refsInputs.current[0] = el} type="text" className="entrada-texto" value={formRegistro.empresa} onChange={e=>setFormRegistro({...formRegistro, empresa:e.target.value})} onKeyDown={e=>alPresionarEnter(e, 0, temporada.id)} />
-                                                </div>
-                                                <div className="space-y-1">
-                                                    <span className="text-[9px] font-black opacity-30 ml-2 uppercase">Campo</span>
-                                                    <input ref={el => refsInputs.current[1] = el} type="text" className="entrada-texto" value={formRegistro.campo} onChange={e=>setFormRegistro({...formRegistro, campo:e.target.value})} onKeyDown={e=>alPresionarEnter(e, 1, temporada.id)} />
-                                                </div>
-                                                <div className="space-y-1">
-                                                    <span className="text-[9px] font-black opacity-30 ml-2 uppercase">Lote</span>
-                                                    <input ref={el => refsInputs.current[2] = el} type="text" className="entrada-texto" value={formRegistro.lote} onChange={e=>setFormRegistro({...formRegistro, lote:e.target.value})} onKeyDown={e=>alPresionarEnter(e, 2, temporada.id)} />
-                                                </div>
-                                                <div className="space-y-1">
-                                                    <span className="text-[9px] font-black opacity-30 ml-2 uppercase">Chofer</span>
-                                                    <input ref={el => refsInputs.current[3] = el} type="text" className="entrada-texto" value={formRegistro.chofer} onChange={e=>setFormRegistro({...formRegistro, chofer:e.target.value})} onKeyDown={e=>alPresionarEnter(e, 3, temporada.id)} />
-                                                </div>
-                                                <div className="space-y-1">
-                                                    <span className="text-[9px] font-black opacity-30 ml-2 uppercase">Has</span>
-                                                    <input ref={el => refsInputs.current[4] = el} type="number" className="entrada-texto" value={formRegistro.hectareas} onChange={e=>setFormRegistro({...formRegistro, hectareas:e.target.value})} onKeyDown={e=>alPresionarEnter(e, 4, temporada.id)} />
-                                                </div>
-                                                <div className="space-y-1">
-                                                    <span className="text-[9px] font-black opacity-30 ml-2 uppercase">$ Neto / Adelanto</span>
-                                                    <input ref={el => refsInputs.current[5] = el} type="number" className="entrada-texto" value={formRegistro.precio} onChange={e=>setFormRegistro({...formRegistro, precio:e.target.value})} onKeyDown={e=>alPresionarEnter(e, 5, temporada.id)} />
-                                                </div>
-                                                <div className="space-y-1">
-                                                    <span className="text-[9px] font-black opacity-30 ml-2 uppercase">IVA %</span>
-                                                    <input ref={el => refsInputs.current[6] = el} type="number" className="entrada-texto" value={formRegistro.iva} onChange={e=>setFormRegistro({...formRegistro, iva:e.target.value})} onKeyDown={e=>alPresionarEnter(e, 6, temporada.id)} />
-                                                </div>
-                                            </div>
-                                            <button onClick={()=>ejecutarGuardado(temporada.id)} className="boton-naranja w-full mt-6 flex items-center justify-center gap-3">
-                                                <i className="fas fa-plus-circle"></i> GUARDAR REGISTRO EN {temporada.nombre}
-                                            </button>
+                                {idActiva === t.id && (
+                                    <div className="p-8 space-y-10 bg-black/40 animar">
+                                        {/* FORMULARIO DE 7 CAMPOS COMPLETO */}
+                                        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4 bg-white/5 p-8 rounded-[2rem] border border-white/5">
+                                            <div className="space-y-1"><span className="text-[9px] font-black opacity-30 ml-2 uppercase">Empresa</span>
+                                            <input ref={el => inputsRef.current[0] = el} type="text" className="input-fulmi" value={form.empresa} onChange={e=>setForm({...form, empresa:e.target.value})} onKeyDown={e=>saltarEnter(e, 0, t.id)} /></div>
+                                            <div className="space-y-1"><span className="text-[9px] font-black opacity-30 ml-2 uppercase">Campo</span>
+                                            <input ref={el => inputsRef.current[1] = el} type="text" className="input-fulmi" value={form.campo} onChange={e=>setForm({...form, campo:e.target.value})} onKeyDown={e=>saltarEnter(e, 1, t.id)} /></div>
+                                            <div className="space-y-1"><span className="text-[9px] font-black opacity-30 ml-2 uppercase">Lote</span>
+                                            <input ref={el => inputsRef.current[2] = el} type="text" className="input-fulmi" value={form.lote} onChange={e=>setForm({...form, lote:e.target.value})} onKeyDown={e=>saltarEnter(e, 2, t.id)} /></div>
+                                            <div className="space-y-1"><span className="text-[9px] font-black opacity-30 ml-2 uppercase">Chofer</span>
+                                            <input ref={el => inputsRef.current[3] = el} type="text" className="input-fulmi" value={form.chofer} onChange={e=>setForm({...form, chofer:e.target.value})} onKeyDown={e=>saltarEnter(e, 3, t.id)} /></div>
+                                            <div className="space-y-1"><span className="text-[9px] font-black opacity-30 ml-2 uppercase">Has</span>
+                                            <input ref={el => inputsRef.current[4] = el} type="number" className="input-fulmi" value={form.has} onChange={e=>setForm({...form, has:e.target.value})} onKeyDown={e=>saltarEnter(e, 4, t.id)} /></div>
+                                            <div className="space-y-1"><span className="text-[9px] font-black opacity-30 ml-2 uppercase">$ Neto</span>
+                                            <input ref={el => inputsRef.current[5] = el} type="number" className="input-fulmi" value={form.precio} onChange={e=>setForm({...form, precio:e.target.value})} onKeyDown={e=>saltarEnter(e, 5, t.id)} /></div>
+                                            <div className="space-y-1"><span className="text-[9px] font-black opacity-30 ml-2 uppercase">IVA %</span>
+                                            <input ref={el => inputsRef.current[6] = el} type="number" className="input-fulmi" value={form.iva} onChange={e=>setForm({...form, iva:e.target.value})} onKeyDown={e=>saltarEnter(e, 6, t.id)} /></div>
+                                            <button onClick={()=>guardarRegistro(t.id)} className="btn-principal lg:col-span-7 flex items-center justify-center gap-3"><i className="fas fa-plus"></i> Guardar Registro</button>
                                         </div>
 
-                                        {/* Tabla de Registros */}
-                                        <div className="overflow-x-auto scroll-fino">
-                                            <table className="w-full border-separate border-spacing-y-3">
+                                        {/* TABLA CON BOTÓN CÁMARA */}
+                                        <div className="overflow-x-auto custom-scroll">
+                                            <table className="w-full border-separate border-spacing-y-4">
                                                 <thead>
-                                                    <tr className="text-[10px] font-black opacity-30 uppercase tracking-[0.2em] text-left">
-                                                        <th className="px-6">Descripción del Movimiento</th>
-                                                        <th className="px-6">Chofer Responsable</th>
-                                                        <th className="px-6 text-right">Monto Neto</th>
-                                                        <th className="px-6 text-center">Gestión</th>
+                                                    <tr className="text-[10px] font-black opacity-30 uppercase text-left tracking-widest">
+                                                        <th className="px-6">Detalle Trabajo</th>
+                                                        <th className="px-6">Chofer</th>
+                                                        <th className="px-6 text-right">Neto</th>
+                                                        <th className="px-6 text-center">Remito</th>
+                                                        <th className="px-6 text-center">Estado</th>
                                                         <th className="px-6"></th>
                                                     </tr>
                                                 </thead>
                                                 <tbody>
-                                                    {temporada.trabajos?.filter(x => x.chofer.toUpperCase().includes(busquedaChofer.toUpperCase())).map(reg => (
-                                                        <tr key={reg.id} className={`tarjeta-cristal hover:bg-white/5 transition-all ${reg.esAdelanto ? 'border-yellow-500/20 bg-yellow-500/5' : ''}`}>
-                                                            <td className="p-6 rounded-l-[1.5rem]">
-                                                                {reg.esAdelanto ? (
-                                                                    <div className="flex items-center gap-3">
-                                                                        <i className="fas fa-hand-holding-usd text-yellow-500"></i>
-                                                                        <span className="font-black text-yellow-500 uppercase italic">Adelanto de efectivo</span>
-                                                                    </div>
-                                                                ) : (
-                                                                    <>
-                                                                        <div className="font-black text-orange-500 uppercase text-sm leading-none">{reg.empresa}</div>
-                                                                        <div className="text-[10px] font-bold opacity-40 mt-1 uppercase">{reg.campo} — LOTE: {reg.lote} ({reg.hectareas} Has)</div>
-                                                                    </>
-                                                                )}
-                                                                <div className="text-[9px] opacity-20 mt-1 uppercase font-black">{reg.fecha}</div>
+                                                    {t.trabajos?.filter(x => x.chofer.toUpperCase().includes(filtro.toUpperCase())).map(reg => (
+                                                        <tr key={reg.id} className={`card-cristal hover:bg-white/5 transition-all ${reg.esAdelanto ? 'border-yellow-500/20 bg-yellow-500/5' : ''}`}>
+                                                            <td className="p-6 rounded-l-[2rem]">
+                                                                <div className={`font-black uppercase ${reg.esAdelanto ? 'text-yellow-500' : 'text-orange-500'}`}>{reg.esAdelanto ? 'Adelanto de efectivo' : `${reg.empresa} - ${reg.lote}`}</div>
+                                                                <div className="text-[10px] font-bold opacity-30 uppercase">{reg.fecha} | {reg.campo}</div>
+                                                            </td>
+                                                            <td className="p-6 font-black uppercase text-xs">{reg.chofer}</td>
+                                                            <td className={`p-6 text-right font-black text-lg ${reg.esAdelanto ? 'text-yellow-500' : 'text-white'}`}>${reg.neto.toLocaleString()}</td>
+                                                            <td className="p-6 text-center">
+                                                                <button className="text-white/20 hover:text-orange-500 text-xl transition-all"><i className="fas fa-camera"></i></button>
                                                             </td>
                                                             <td className="p-6">
-                                                                <div className="font-black uppercase text-xs">{reg.chofer}</div>
-                                                            </td>
-                                                            <td className="p-6 text-right">
-                                                                <p className={`text-lg font-black ${reg.esAdelanto ? 'text-yellow-500' : 'text-white'}`}>
-                                                                    ${reg.neto.toLocaleString()}
-                                                                </p>
-                                                            </td>
-                                                            <td className="p-6 text-center">
                                                                 <div className="flex justify-center gap-3">
-                                                                    <button className={`w-10 h-10 rounded-xl border-2 transition-all ${reg.cobrado ? 'bg-green-600 border-green-400 shadow-lg shadow-green-900/40' : 'border-white/10 opacity-10'}`}>
-                                                                        <i className="fas fa-check"></i>
-                                                                    </button>
-                                                                    <button className={`w-10 h-10 rounded-xl border-2 transition-all ${reg.pagado ? 'bg-blue-600 border-blue-400 shadow-lg shadow-blue-900/40' : 'border-white/10 opacity-10'}`}>
-                                                                        <i className="fas fa-check"></i>
-                                                                    </button>
+                                                                    <button className={`w-10 h-10 rounded-xl border-2 ${reg.cobrado ? 'bg-green-600 border-green-400' : 'border-white/10 opacity-10'}`}><i className="fas fa-check"></i></button>
+                                                                    <button className={`w-10 h-10 rounded-xl border-2 ${reg.pagado ? 'bg-blue-600 border-blue-400' : 'border-white/10 opacity-10'}`}><i className="fas fa-check"></i></button>
                                                                 </div>
                                                             </td>
-                                                            <td className="p-6 rounded-r-[1.5rem] text-right">
-                                                                <button onClick={async() => {
-                                                                    if(confirm('¿Borrar registro permanentemente?')) {
-                                                                        const nuevosTrabajos = temporada.trabajos.filter(t => t.id !== reg.id);
-                                                                        await db.collection('temporadas').doc(temporada.id).update({ trabajos: nuevosTrabajos });
-                                                                    }
-                                                                }} className="text-white/5 hover:text-red-500 transition-colors p-3">
-                                                                    <i className="fas fa-trash-alt"></i>
-                                                                </button>
+                                                            <td className="p-6 rounded-r-[2rem] text-right">
+                                                                <button onClick={async() => { if(confirm('¿Borrar?')) { const n = t.trabajos.filter(x => x.id !== reg.id); await db.collection('temporadas').doc(t.id).update({ trabajos: n }); } }} className="text-white/5 hover:text-red-500 p-3"><i className="fas fa-trash-alt"></i></button>
                                                             </td>
                                                         </tr>
                                                     ))}
@@ -531,13 +331,13 @@
                                 )}
                             </div>
                         ))}
-                    </main>
+                    </div>
                 </div>
             );
         };
 
         const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(<LaFulmigadoraApp />);
+        root.render(<AppLaFulmigadora />);
     </script>
 </body>
 </html>
