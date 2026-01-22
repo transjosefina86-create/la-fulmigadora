@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>La Fulmigadora - Control Total de Gestión</title>
+    <title>La Fulmigadora - Sistema Integral de Gestión</title>
+    
     <script src="https://www.gstatic.com/firebasejs/11.1.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/11.1.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore-compat.js"></script>
@@ -13,14 +14,78 @@
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
-        body { font-family: 'Inter', sans-serif; background-color: #020617; color: #f8fafc; margin: 0; }
-        .bg-blur { backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px); }
-        .loading-pulse { animation: pulse 2s infinite; }
-        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .5; } }
-        input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
-        .transicion-suave { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;900&display=swap');
+        
+        :root {
+            --orange-main: #ea580c;
+            --slate-dark: #020617;
+            --glass-bg: rgba(255, 255, 255, 0.03);
+            --glass-border: rgba(255, 255, 255, 0.08);
+        }
+
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background-color: var(--slate-dark); 
+            color: #f8fafc; 
+            margin: 0;
+            overflow-x: hidden;
+            min-height: 100vh;
+        }
+
+        /* Estilos de Cristal y Efectos Visuales que se habían perdido */
+        .glass-panel {
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+        }
+
+        .shadow-orange-custom {
+            box-shadow: 0 10px 40px -10px rgba(234, 88, 12, 0.3);
+        }
+
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: var(--orange-main);
+        }
+
+        .animate-fade-in {
+            animation: fadeIn 0.5s ease-out forwards;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .btn-hover-scale {
+            transition: transform 0.2s ease, background-color 0.2s ease;
+        }
+
+        .btn-hover-scale:active {
+            transform: scale(0.95);
+        }
+
+        input[type="number"]::-webkit-outer-spin-button,
+        input[type="number"]::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
     </style>
 </head>
 <body>
@@ -29,7 +94,7 @@
     <script type="text/babel">
         const { useState, useEffect, useRef, useMemo } = React;
 
-        // CONFIGURACIÓN OFICIAL DE LA FULMIGADORA
+        // CONFIGURACIÓN FIREBASE
         const firebaseConfig = {
             apiKey: "AIzaSyC0jIDWwzWFgugZpY8mhOFZEh-ZAUhed7Y",
             authDomain: "la-fulmigadora.firebaseapp.com",
@@ -39,54 +104,55 @@
             appId: "1:235458080625:web:61ea831d6620f1ecde10d0"
         };
 
-        if (!firebase.apps.length) { firebase.initializeApp(firebaseConfig); }
+        if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
         const auth = firebase.auth();
 
-        const Icon = ({ name, className }) => <i className={`${name} ${className}`}></i>;
-
         const App = () => {
-            const [cargandoNube, setCargandoNube] = useState(true);
+            // Estados de Autorización y Carga
             const [autorizado, setAutorizado] = useState(false);
             const [passwordInput, setPasswordInput] = useState('');
+            const [cargandoNube, setCargandoNube] = useState(true);
+
+            // Estados de Datos
             const [temporadas, setTemporadas] = useState([]);
-            const [nuevaTemporadaNombre, setNuevaTemporadaNombre] = useState('');
             const [temporadaActiva, setTemporadaActiva] = useState(null);
+            const [nuevaTempNombre, setNuevaTempNombre] = useState('');
+
+            // Estados de Filtros y Configuración
             const [filtroEmpresa, setFiltroEmpresa] = useState('');
             const [filtroChofer, setFiltroChofer] = useState('');
             const [porcentajeChofer, setPorcentajeChofer] = useState(20);
             
+            // Gestión de Fondo Personalizado
             const [fondoConfig, setFondoConfig] = useState(() => {
-                const saved = localStorage.getItem('fulmi_fondo_v2');
-                return saved ? JSON.parse(saved) : { url: null, enBloqueo: true, enPanel: true };
+                const saved = localStorage.getItem('fulmi_config_v2');
+                return saved ? JSON.parse(saved) : { url: null, blur: true, opacity: 0.15 };
             });
-            const [mostrarConfigFondo, setMostrarConfigFondo] = useState(false);
 
             const [nuevoTrabajo, setNuevoTrabajo] = useState({
                 empresa: '', campo: '', lote: '', chofer: '', 
-                hectareas: '', precioHectarea: '', ivaPorcentaje: '0', remito: null,
-                pagadoAChofer: false, cobradoAEmpresa: false
+                hectareas: '', precioHectarea: '', ivaPorcentaje: '0'
             });
 
+            // Persistencia de configuración
             useEffect(() => {
-                localStorage.setItem('fulmi_fondo_v2', JSON.stringify(fondoConfig));
+                localStorage.setItem('fulmi_config_v2', JSON.stringify(fondoConfig));
             }, [fondoConfig]);
 
+            // Suscripción a Base de Datos
             useEffect(() => {
                 auth.signInAnonymously().catch(console.error);
                 const unsubscribe = db.collection('temporadas')
                     .orderBy('fechaCreacion', 'desc')
-                    .onSnapshot((snapshot) => {
-                        const docs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                        setTemporadas(docs);
-                        setCargandoNube(false);
-                    }, (err) => {
-                        console.error("Error Firestore:", err);
+                    .onSnapshot(snapshot => {
+                        setTemporadas(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
                         setCargandoNube(false);
                     });
                 return () => unsubscribe();
             }, []);
 
+            // MANEJO DE ARCHIVOS Y CÁMARA
             const manejarCargaFondo = (e) => {
                 const file = e.target.files[0];
                 if (file) {
@@ -96,39 +162,44 @@
                 }
             };
 
-            const manejarRemito = (e, temporadaId, trabajoId) => {
+            const manejarRemito = (e, tId, trId) => {
                 const file = e.target.files[0];
                 if (file) {
                     const reader = new FileReader();
                     reader.onloadend = async () => {
-                        const temp = temporadas.find(t => t.id === temporadaId);
-                        const nuevosTrabajos = temp.trabajos.map(tr => 
-                            tr.id === trabajoId ? { ...tr, remito: reader.result } : tr
+                        const t = temporadas.find(x => x.id === tId);
+                        const nuevos = t.trabajos.map(tr => 
+                            tr.id === trId ? { ...tr, remito: reader.result } : tr
                         );
-                        await db.collection('temporadas').doc(temporadaId).update({ trabajos: nuevosTrabajos });
+                        await db.collection('temporadas').doc(tId).update({ trabajos: nuevos });
                     };
                     reader.readAsDataURL(file);
                 }
             };
 
-            const agregarTemporada = async () => {
-                if (!nuevaTemporadaNombre) return;
+            // ACCIONES DE BASE DE DATOS
+            const crearTemporada = async () => {
+                if (!nuevaTempNombre.trim()) return;
                 await db.collection('temporadas').add({
-                    nombre: nuevaTemporadaNombre,
+                    nombre: nuevaTempNombre,
                     trabajos: [],
                     fechaCreacion: firebase.firestore.FieldValue.serverTimestamp()
                 });
-                setNuevaTemporadaNombre('');
+                setNuevaTempNombre('');
             };
 
-            const agregarTrabajo = async (tempId) => {
-                if (!nuevoTrabajo.empresa || !nuevoTrabajo.hectareas || !nuevoTrabajo.chofer) {
-                    alert("Faltan datos obligatorios");
+            const borrarTemporada = async (id) => {
+                if (confirm("¿Borrar temporada completa?")) await db.collection('temporadas').doc(id).delete();
+            };
+
+            const agregarTrabajo = async (tId) => {
+                if (!nuevoTrabajo.empresa || !nuevoTrabajo.chofer || !nuevoTrabajo.hectareas) {
+                    alert("Faltan datos críticos");
                     return;
                 }
-                const ha = parseFloat(nuevoTrabajo.hectareas) || 0;
-                const precio = parseFloat(nuevoTrabajo.precioHectarea) || 0;
-                const neto = ha * precio;
+                const ha = parseFloat(nuevoTrabajo.hectareas);
+                const pr = parseFloat(nuevoTrabajo.precioHectarea || 0);
+                const neto = ha * pr;
                 const ivaVal = neto * (parseFloat(nuevoTrabajo.ivaPorcentaje) / 100);
 
                 const registro = {
@@ -137,331 +208,274 @@
                     importeNeto: neto,
                     ivaValor: ivaVal,
                     totalFinal: neto + ivaVal,
-                    fecha: new Date().toLocaleDateString()
+                    fecha: new Date().toLocaleDateString(),
+                    cobrado: false,
+                    pagadoAChofer: false
                 };
-                
-                await db.collection('temporadas').doc(tempId).update({
+
+                await db.collection('temporadas').doc(tId).update({
                     trabajos: firebase.firestore.FieldValue.arrayUnion(registro)
                 });
-                setNuevoTrabajo({ ...nuevoTrabajo, lote: '', hectareas: '', remito: null });
+                setNuevoTrabajo({ ...nuevoTrabajo, lote: '', hectareas: '' });
             };
 
-            const eliminarTrabajo = async (tempId, trId) => {
-                if(!confirm("¿Eliminar este registro permanentemente?")) return;
-                const temp = temporadas.find(t => t.id === tempId);
-                const nuevos = temp.trabajos.filter(tr => tr.id !== trId);
-                await db.collection('temporadas').doc(tempId).update({ trabajos: nuevos });
+            const toggleEstado = async (tId, trId, campo) => {
+                const t = temporadas.find(x => x.id === tId);
+                const nuevos = t.trabajos.map(tr => tr.id === trId ? { ...tr, [campo]: !tr[campo] } : tr);
+                await db.collection('temporadas').doc(tId).update({ trabajos: nuevos });
             };
 
-            const toggleEstado = async (tempId, trId, campo) => {
-                const temp = temporadas.find(t => t.id === tempId);
-                const nuevos = temp.trabajos.map(tr => tr.id === trId ? { ...tr, [campo]: !tr[campo] } : tr);
-                await db.collection('temporadas').doc(tempId).update({ trabajos: nuevos });
-            };
-
-            const gruposFiltrados = useMemo(() => {
-                if (!temporadaActiva) return [];
-                const temp = temporadas.find(t => t.id === temporadaActiva);
-                if (!temp || !temp.trabajos) return [];
-
-                const filtrados = temp.trabajos.filter(tr => 
+            // LÓGICA DE SALDOS Y CÁLCULOS
+            const saldos = useMemo(() => {
+                if (!temporadaActiva) return null;
+                const t = temporadas.find(x => x.id === temporadaActiva);
+                const filtrados = t?.trabajos?.filter(tr => 
                     tr.empresa.toLowerCase().includes(filtroEmpresa.toLowerCase()) && 
                     tr.chofer.toLowerCase().includes(filtroChofer.toLowerCase())
-                );
+                ) || [];
 
-                const grupos = {};
-                filtrados.forEach(tr => {
-                    const clave = `${tr.empresa}-${tr.campo}`.toLowerCase();
-                    if (!grupos[clave]) {
-                        grupos[clave] = { 
-                            empresa: tr.empresa, 
-                            campo: tr.campo, 
-                            items: [], 
-                            totalHectareas: 0, 
-                            totalFacturado: 0,
-                            totalNetoParaChofer: 0 
-                        };
-                    }
-                    grupos[clave].items.push(tr);
-                    grupos[clave].totalHectareas += parseFloat(tr.hectareas) || 0;
-                    grupos[clave].totalFacturado += tr.totalFinal;
-                    grupos[clave].totalNetoParaChofer += tr.importeNeto;
-                });
-                return Object.values(grupos);
-            }, [temporadas, temporadaActiva, filtroEmpresa, filtroChofer]);
+                return {
+                    debeEmpresa: filtrados.filter(tr => !tr.cobrado).reduce((s, c) => s + c.totalFinal, 0),
+                    debeChofer: filtrados.filter(tr => !tr.pagadoAChofer).reduce((s, c) => s + (c.importeNeto * (porcentajeChofer / 100)), 0),
+                    hasTotales: filtrados.reduce((s, c) => s + (parseFloat(c.hectareas) || 0), 0)
+                };
+            }, [temporadas, temporadaActiva, filtroEmpresa, filtroChofer, porcentajeChofer]);
 
+            // VISTA DE ACCESO
             if (!autorizado) {
                 return (
-                    <div className="min-h-screen flex items-center justify-center relative bg-slate-950 overflow-hidden">
-                        {fondoConfig.url && fondoConfig.enBloqueo && (
-                            <div className="absolute inset-0 bg-cover bg-center opacity-40" style={{backgroundImage: `url(${fondoConfig.url})`}}></div>
-                        )}
-                        <div className="relative z-10 bg-black/60 backdrop-blur-3xl p-12 rounded-[3.5rem] border border-white/10 text-center w-full max-w-sm shadow-2xl">
-                            <div className="bg-orange-600 w-24 h-24 rounded-[2rem] flex items-center justify-center mx-auto mb-8 shadow-2xl shadow-orange-500/30">
-                                <Icon name="fas fa-fingerprint text-4xl text-white" />
+                    <div className="h-screen flex items-center justify-center bg-slate-950 p-6">
+                        <div className="glass-panel p-12 rounded-[3.5rem] w-full max-w-sm text-center shadow-2xl animate-fade-in">
+                            <div className="bg-orange-600 w-20 h-20 rounded-3xl flex items-center justify-center mx-auto mb-8 shadow-xl shadow-orange-600/30">
+                                <i className="fas fa-shield-alt text-3xl text-white"></i>
                             </div>
-                            <h2 className="text-3xl font-black text-white mb-2 uppercase italic tracking-tighter">La Fulmigadora</h2>
-                            <p className="text-white/30 text-[10px] font-bold uppercase tracking-[0.3em] mb-10 text-orange-500">Acceso Restringido</p>
-                            <form onSubmit={(e) => { e.preventDefault(); if(passwordInput === '1986') setAutorizado(true); else setPasswordInput(''); }}>
-                                <input type="password" placeholder="••••" className="w-full p-6 bg-white/5 border border-white/10 rounded-2xl text-center text-white text-4xl mb-6 focus:ring-4 focus:ring-orange-500/50 outline-none transicion-suave"
-                                    value={passwordInput} onChange={(e) => setPasswordInput(e.target.value)} autoFocus />
-                                <button className="w-full bg-orange-600 text-white font-black py-6 rounded-2xl hover:bg-orange-500 active:scale-95 transition-all uppercase tracking-widest shadow-xl">Ingresar al Panel</button>
-                            </form>
+                            <h2 className="text-3xl font-black mb-2 uppercase italic tracking-tighter">Acceso</h2>
+                            <p className="text-[10px] font-bold text-orange-500 tracking-[0.3em] uppercase mb-8">La Fulmigadora</p>
+                            <input 
+                                type="password" 
+                                placeholder="CLAVE" 
+                                className="w-full p-5 bg-white/5 border border-white/10 rounded-2xl text-center text-3xl text-white mb-6 focus:outline-none focus:ring-2 focus:ring-orange-600 transition-all"
+                                value={passwordInput}
+                                onChange={e => setPasswordInput(e.target.value)}
+                                onKeyPress={e => e.key === 'Enter' && passwordInput === '1986' && setAutorizado(true)}
+                            />
+                            <button 
+                                onClick={() => passwordInput === '1986' && setAutorizado(true)}
+                                className="w-full bg-orange-600 py-5 rounded-2xl font-black uppercase tracking-widest hover:bg-orange-500 btn-hover-scale"
+                            >
+                                Entrar
+                            </button>
                         </div>
                     </div>
                 );
             }
 
+            // VISTA PRINCIPAL
             return (
-                <div className="min-h-screen relative bg-slate-950 text-slate-100">
-                    {fondoConfig.url && fondoConfig.enPanel && (
-                        <div className="fixed inset-0 bg-cover bg-center bg-fixed opacity-20 pointer-events-none" style={{backgroundImage: `url(${fondoConfig.url})`}}></div>
+                <div className="min-h-screen relative p-4 md:p-10 pb-32">
+                    {/* Fondo Dinámico con toda su configuración */}
+                    {fondoConfig.url && (
+                        <div className="fixed inset-0 -z-10 bg-cover bg-center transition-opacity duration-1000" 
+                             style={{ backgroundImage: `url(${fondoConfig.url})`, opacity: fondoConfig.opacity }}></div>
                     )}
                     
-                    <div className="relative z-10 p-4 md:p-10 max-w-7xl mx-auto">
-                        <header className="flex flex-col lg:flex-row justify-between items-center bg-white/5 backdrop-blur-2xl p-10 rounded-[3.5rem] mb-10 border border-white/10 shadow-2xl">
-                            <div className="flex items-center gap-6 mb-8 lg:mb-0">
-                                <div className="bg-orange-600 p-6 rounded-[2rem] shadow-xl shadow-orange-900/40 rotate-6 hover:rotate-0 transicion-suave">
-                                    <Icon name="fas fa-tractor text-3xl text-white" />
-                                </div>
-                                <div>
-                                    <h1 className="text-4xl font-black uppercase italic text-orange-500 leading-none tracking-tighter">La Fulmigadora</h1>
-                                    <div className="flex items-center gap-3 mt-3">
-                                        <div className={`w-3 h-3 rounded-full ${!cargandoNube ? 'bg-green-500 shadow-[0_0_15px_rgba(34,197,94,0.6)] animate-pulse' : 'bg-red-500'}`}></div>
-                                        <span className="text-xs font-black uppercase tracking-[0.2em] text-white/40 italic">Sincronización en Tiempo Real</span>
-                                    </div>
-                                </div>
+                    {/* Cabecera Principal */}
+                    <header className="glass-panel p-8 rounded-[3rem] mb-10 flex flex-col lg:flex-row justify-between items-center gap-8 shadow-2xl">
+                        <div className="flex items-center gap-6">
+                            <div className="bg-orange-600 p-5 rounded-[2rem] shadow-lg shadow-orange-600/30 rotate-3">
+                                <i className="fas fa-tractor text-white text-3xl"></i>
                             </div>
-
-                            <div className="flex flex-wrap justify-center gap-5">
-                                <button onClick={() => setMostrarConfigFondo(!mostrarConfigFondo)} className="bg-white/5 hover:bg-white/10 p-5 rounded-2xl border border-white/10 transition-all text-white/40 hover:text-white group">
-                                    <Icon name="fas fa-palette text-xl group-hover:scale-125 transicion-suave" />
-                                </button>
-                                <div className="flex bg-black/60 p-2.5 rounded-3xl border border-white/5 shadow-inner">
-                                    <input type="text" placeholder="Nombre de Temporada..." className="bg-transparent px-5 text-sm font-bold outline-none text-white w-48 md:w-64"
-                                        value={nuevaTemporadaNombre} onChange={(e) => setNuevaTemporadaNombre(e.target.value)} />
-                                    <button onClick={agregarTemporada} className="bg-green-600 text-white px-8 py-4 rounded-2xl font-black hover:bg-green-500 active:scale-90 transition-all shadow-lg"><Icon name="fas fa-plus mr-2"/> CREAR</button>
-                                </div>
-                            </div>
-                        </header>
-
-                        {mostrarConfigFondo && (
-                            <div className="bg-white/10 backdrop-blur-3xl p-10 rounded-[3rem] border border-white/10 mb-10 animate-in slide-in-from-top-10 duration-700 shadow-2xl">
-                                <div className="flex justify-between items-center mb-8">
-                                    <h4 className="text-xl font-black uppercase italic text-orange-500 tracking-tight">Estética del Sistema</h4>
-                                    <button onClick={() => setMostrarConfigFondo(false)} className="text-white/20 hover:text-red-500 transicion-suave"><Icon name="fas fa-times-circle text-2xl"/></button>
-                                </div>
-                                <div className="grid md:grid-cols-2 gap-10">
-                                    <label className="border-4 border-dashed border-white/5 p-12 rounded-[2.5rem] text-center hover:bg-white/5 cursor-pointer transition-all group">
-                                        <Icon name="fas fa-camera-retro text-4xl text-orange-600 mb-4 group-hover:scale-110 transicion-suave" />
-                                        <p className="text-[11px] font-black uppercase tracking-[0.2em] text-white/40">Cambiar Fondo de Pantalla</p>
-                                        <input type="file" className="hidden" accept="image/*" onChange={manejarCargaFondo} />
-                                    </label>
-                                    <div className="flex flex-col justify-center gap-5">
-                                        <label className="flex justify-between items-center p-6 bg-black/40 rounded-2xl border border-white/5 cursor-pointer hover:border-orange-500/30 transicion-suave">
-                                            <span className="text-xs font-black uppercase tracking-widest text-white/60">Fondo en Bloqueo</span>
-                                            <input type="checkbox" className="w-8 h-8 accent-orange-600 cursor-pointer" checked={fondoConfig.enBloqueo} onChange={e => setFondoConfig({...fondoConfig, enBloqueo: e.target.checked})} />
-                                        </label>
-                                        <label className="flex justify-between items-center p-6 bg-black/40 rounded-2xl border border-white/5 cursor-pointer hover:border-orange-500/30 transicion-suave">
-                                            <span className="text-xs font-black uppercase tracking-widest text-white/60">Fondo en Panel</span>
-                                            <input type="checkbox" className="w-8 h-8 accent-orange-600 cursor-pointer" checked={fondoConfig.enPanel} onChange={e => setFondoConfig({...fondoConfig, enPanel: e.target.checked})} />
-                                        </label>
-                                        {fondoConfig.url && <button onClick={() => setFondoConfig({...fondoConfig, url: null})} className="w-full p-4 bg-red-600/10 text-red-500 rounded-2xl font-black text-xs uppercase tracking-[0.2em] hover:bg-red-600 hover:text-white transicion-suave">Restablecer Original</button>}
-                                    </div>
-                                </div>
-                            </div>
-                        )}
-
-                        {/* PANEL DE FILTROS Y LIQUIDACIÓN INTELIGENTE */}
-                        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-10">
-                            <div className="md:col-span-1 relative group">
-                                <Icon name="fas fa-search absolute left-5 top-1/2 -translate-y-1/2 text-white/20 group-focus-within:text-orange-500 transicion-suave" />
-                                <input type="text" placeholder="Empresa..." className="w-full p-6 pl-14 bg-white/5 border border-white/10 rounded-[2rem] outline-none focus:border-orange-500/50 font-bold text-sm text-white shadow-xl"
-                                    value={filtroEmpresa} onChange={(e) => setFiltroEmpresa(e.target.value)} />
-                            </div>
-                            <div className="md:col-span-1 relative group">
-                                <Icon name="fas fa-user-tie absolute left-5 top-1/2 -translate-y-1/2 text-white/20 group-focus-within:text-orange-500 transicion-suave" />
-                                <input type="text" placeholder="Chofer..." className="w-full p-6 pl-14 bg-white/5 border border-white/10 rounded-[2rem] outline-none focus:border-orange-500/50 font-bold text-sm text-white shadow-xl"
-                                    value={filtroChofer} onChange={(e) => setFiltroChofer(e.target.value)} />
-                            </div>
-                            <div className="md:col-span-2 flex items-center justify-between bg-gradient-to-r from-orange-600 to-orange-700 p-6 rounded-[2.5rem] shadow-2xl shadow-orange-900/40 border border-white/10">
-                                <div className="flex items-center gap-5">
-                                    <div className="bg-white/20 p-4 rounded-2xl"><Icon name="fas fa-percent text-xl text-white" /></div>
-                                    <div>
-                                        <span className="font-black uppercase text-[10px] tracking-[0.2em] text-white/60 block">Comisión Chofer</span>
-                                        <span className="text-[10px] font-bold text-white/40 italic uppercase">Calculado sobre Neto</span>
-                                    </div>
-                                </div>
-                                <div className="flex items-center gap-4 bg-black/20 p-3 rounded-2xl">
-                                    <input type="number" className="bg-transparent w-20 text-center font-black text-3xl outline-none text-white" 
-                                        value={porcentajeChofer} onChange={(e) => setPorcentajeChofer(e.target.value)} />
-                                    <span className="font-black text-2xl text-white/50">%</span>
+                            <div>
+                                <h1 className="text-3xl font-black uppercase italic text-orange-500 tracking-tighter leading-none">La Fulmigadora</h1>
+                                <div className="flex items-center gap-2 mt-2">
+                                    <div className="w-2 h-2 rounded-full bg-green-500 shadow-[0_0_8px_#22c55e]"></div>
+                                    <span className="text-[10px] font-black text-white/40 uppercase tracking-widest">Sistema Conectado</span>
                                 </div>
                             </div>
                         </div>
 
-                        {/* LISTADO DE TEMPORADAS */}
-                        <div className="space-y-8">
-                            {temporadas.map(temp => (
-                                <div key={temp.id} className="bg-white/5 border border-white/10 rounded-[3.5rem] overflow-hidden backdrop-blur-xl shadow-2xl transicion-suave">
-                                    <div className={`p-10 flex justify-between items-center cursor-pointer transition-all ${temporadaActiva === temp.id ? 'bg-orange-600/10' : 'hover:bg-white/5'}`}
-                                        onClick={() => setTemporadaActiva(temporadaActiva === temp.id ? null : temp.id)}>
-                                        <div className="flex items-center gap-8">
-                                            <div className="w-20 h-20 bg-gradient-to-br from-white/5 to-white/10 rounded-[2.2rem] flex items-center justify-center border border-white/10 text-orange-500 shadow-inner group">
-                                                <Icon name="fas fa-folder-open text-3xl group-hover:scale-110 transicion-suave" />
-                                            </div>
-                                            <div>
-                                                <h3 className="text-3xl font-black uppercase tracking-tighter text-white/90">{temp.nombre}</h3>
-                                                <div className="flex gap-4 mt-2">
-                                                    <span className="text-[10px] font-bold text-white/20 uppercase tracking-widest bg-white/5 px-3 py-1 rounded-full">{temp.trabajos?.length || 0} Registros</span>
+                        <div className="flex flex-wrap gap-4 justify-center items-center">
+                            <label className="bg-white/5 p-4 rounded-2xl cursor-pointer hover:bg-white/10 transicion border border-white/5">
+                                <i className="fas fa-image text-white/50"></i>
+                                <input type="file" className="hidden" accept="image/*" onChange={manejarCargaFondo} />
+                            </label>
+                            <input 
+                                type="text" 
+                                placeholder="Nueva Temporada..." 
+                                className="bg-black/40 px-6 py-3 rounded-2xl text-sm font-bold border border-white/10 outline-none focus:border-orange-600"
+                                value={nuevaTempNombre}
+                                onChange={e => setNuevaTempNombre(e.target.value)}
+                            />
+                            <button onClick={crearTemporada} className="bg-green-600 p-4 rounded-2xl font-black hover:bg-green-500 btn-hover-scale">
+                                <i className="fas fa-plus"></i>
+                            </button>
+                        </div>
+                    </header>
+
+                    {/* Filtros y Liquidación */}
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-10">
+                        <div className="relative group">
+                            <i className="fas fa-search absolute left-6 top-1/2 -translate-y-1/2 text-white/20 group-focus-within:text-orange-500"></i>
+                            <input 
+                                type="text" 
+                                placeholder="Empresa..." 
+                                className="w-full p-6 pl-14 glass-panel rounded-[2rem] font-bold outline-none focus:border-orange-500 transition-all"
+                                onChange={e => setFiltroEmpresa(e.target.value)}
+                            />
+                        </div>
+                        <div className="relative group">
+                            <i className="fas fa-user absolute left-6 top-1/2 -translate-y-1/2 text-white/20 group-focus-within:text-orange-500"></i>
+                            <input 
+                                type="text" 
+                                placeholder="Chofer..." 
+                                className="w-full p-6 pl-14 glass-panel rounded-[2rem] font-bold outline-none focus:border-orange-500 transition-all"
+                                onChange={e => setFiltroChofer(e.target.value)}
+                            />
+                        </div>
+                        <div className="md:col-span-2 flex items-center justify-between bg-orange-600 p-6 rounded-[2.5rem] shadow-xl shadow-orange-900/40">
+                            <div className="flex items-center gap-4">
+                                <div className="bg-white/20 p-4 rounded-2xl"><i className="fas fa-percent text-white"></i></div>
+                                <span className="font-black text-[11px] uppercase tracking-widest">Comisión Chofer:</span>
+                            </div>
+                            <div className="flex items-center gap-4 bg-black/20 p-3 rounded-2xl">
+                                <input 
+                                    type="number" 
+                                    className="bg-transparent w-16 text-center text-2xl font-black outline-none" 
+                                    value={porcentajeChofer} 
+                                    onChange={e => setPorcentajeChofer(e.target.value)}
+                                />
+                                <span className="font-black text-white/40">%</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* RECUADROS DE SALDOS DINÁMICOS */}
+                    {saldos && (
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10 animate-fade-in">
+                            <div className="glass-panel p-8 rounded-[2.5rem] border-l-[12px] border-red-500">
+                                <p className="text-[11px] font-black uppercase text-white/30 mb-2 tracking-widest italic">Pendiente de Empresa</p>
+                                <p className="text-4xl font-black text-red-500">${saldos.debeEmpresa.toLocaleString()}</p>
+                            </div>
+                            <div className="glass-panel p-8 rounded-[2.5rem] border-l-[12px] border-blue-500">
+                                <p className="text-[11px] font-black uppercase text-white/30 mb-2 tracking-widest italic">Pendiente al Chofer</p>
+                                <p className="text-4xl font-black text-blue-500">${saldos.debeChofer.toLocaleString()}</p>
+                            </div>
+                            <div className="glass-panel p-8 rounded-[2.5rem] border-l-[12px] border-orange-500">
+                                <p className="text-[11px] font-black uppercase text-white/30 mb-2 tracking-widest italic">Hectáreas Totales</p>
+                                <p className="text-4xl font-black text-orange-500">{saldos.hasTotales.toLocaleString()} <span className="text-lg">Has</span></p>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Listado de Temporadas */}
+                    <div className="space-y-8">
+                        {temporadas.map(t => (
+                            <div key={t.id} className="glass-panel rounded-[3.5rem] overflow-hidden shadow-2xl animate-fade-in">
+                                <div className={`p-10 flex justify-between items-center cursor-pointer hover:bg-white/5 transicion ${temporadaActiva === t.id ? 'bg-white/5' : ''}`}
+                                     onClick={() => setTemporadaActiva(temporadaActiva === t.id ? null : t.id)}>
+                                    <div className="flex items-center gap-6">
+                                        <div className={`w-16 h-16 rounded-[1.8rem] flex items-center justify-center border transition-all ${temporadaActiva === t.id ? 'bg-orange-600 border-orange-400' : 'bg-white/5 border-white/10'}`}>
+                                            <i className={`fas fa-folder-open text-2xl ${temporadaActiva === t.id ? 'text-white' : 'text-white/20'}`}></i>
+                                        </div>
+                                        <h3 className="text-2xl font-black uppercase italic tracking-tighter">{t.nombre}</h3>
+                                    </div>
+                                    <div className="flex items-center gap-8">
+                                        <button onClick={(e) => {e.stopPropagation(); borrarTemporada(t.id)}} className="text-white/10 hover:text-red-500 transicion"><i className="fas fa-trash-alt"></i></button>
+                                        <i className={`fas fa-chevron-down text-2xl transition-transform duration-500 ${temporadaActiva === t.id ? 'rotate-180 text-orange-500' : 'text-white/10'}`}></i>
+                                    </div>
+                                </div>
+
+                                {temporadaActiva === t.id && (
+                                    <div className="p-8 md:p-12 border-t border-white/5 space-y-12">
+                                        
+                                        {/* FORMULARIO DE CARGA EXTENDIDO */}
+                                        <div className="bg-black/30 p-10 rounded-[3rem] border border-white/5 shadow-inner">
+                                            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4">
+                                                <input type="text" placeholder="Empresa" className="p-5 rounded-2xl text-black font-black text-sm" value={nuevoTrabajo.empresa} onChange={e=>setNuevoTrabajo({...nuevoTrabajo, empresa: e.target.value})} />
+                                                <input type="text" placeholder="Campo" className="p-5 rounded-2xl text-black font-black text-sm" value={nuevoTrabajo.campo} onChange={e=>setNuevoTrabajo({...nuevoTrabajo, campo: e.target.value})} />
+                                                <input type="text" placeholder="Lotes (Ej: 1, 2, 5)" className="p-5 rounded-2xl text-black font-black text-sm lg:col-span-2" value={nuevoTrabajo.lote} onChange={e=>setNuevoTrabajo({...nuevoTrabajo, lote: e.target.value})} />
+                                                <input type="text" placeholder="Chofer" className="p-5 rounded-2xl text-black font-black text-sm" value={nuevoTrabajo.chofer} onChange={e=>setNuevoTrabajo({...nuevoTrabajo, chofer: e.target.value})} />
+                                                <input type="number" placeholder="Has" className="p-5 rounded-2xl text-black font-black text-sm" value={nuevoTrabajo.hectareas} onChange={e=>setNuevoTrabajo({...nuevoTrabajo, hectareas: e.target.value})} />
+                                                <input type="number" placeholder="$ x Ha" className="p-5 rounded-2xl text-black font-black text-sm" value={nuevoTrabajo.precioHectarea} onChange={e=>setNuevoTrabajo({...nuevoTrabajo, precioHectarea: e.target.value})} />
+                                                <div className="lg:col-span-7 flex justify-end">
+                                                    <button onClick={() => agregarTrabajo(t.id)} className="bg-orange-600 px-12 py-5 rounded-2xl font-black uppercase tracking-widest hover:bg-orange-500 shadow-lg shadow-orange-900/40 btn-hover-scale">Guardar Registro</button>
                                                 </div>
                                             </div>
                                         </div>
-                                        <Icon name={`fas fa-chevron-down text-white/20 text-2xl transition-transform duration-700 ${temporadaActiva === temp.id ? 'rotate-180 text-orange-500' : ''}`} />
-                                    </div>
 
-                                    {temporadaActiva === temp.id && (
-                                        <div className="p-8 md:p-12 border-t border-white/10 space-y-12 animate-in slide-in-from-top-10 duration-500">
-                                            
-                                            {/* CARGA DE TRABAJO NUEVO */}
-                                            <div className="bg-black/40 p-10 rounded-[3rem] border border-white/5 shadow-2xl relative">
-                                                <div className="absolute -top-4 left-10 bg-orange-600 px-6 py-1 rounded-full text-[9px] font-black uppercase tracking-[0.2em]">Nuevo Registro</div>
-                                                <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-5 text-slate-900">
-                                                    {['Empresa', 'Campo', 'Lote', 'Chofer'].map(f => (
-                                                        <div key={f} className="flex flex-col">
-                                                            <label className="text-[9px] font-black text-white/20 uppercase ml-3 mb-2 tracking-widest">{f}</label>
-                                                            <input type="text" className="w-full p-4 rounded-2xl font-bold text-sm outline-none focus:ring-4 focus:ring-orange-500/20 transicion-suave shadow-inner"
-                                                                value={nuevoTrabajo[f.toLowerCase()]} onChange={(e) => setNuevoTrabajo({...nuevoTrabajo, [f.toLowerCase()]: e.target.value})} />
-                                                        </div>
+                                        {/* TABLA DE REGISTROS CON TODAS LAS FUNCIONES */}
+                                        <div className="overflow-x-auto custom-scrollbar">
+                                            <table className="w-full text-left border-separate border-spacing-y-4">
+                                                <thead className="text-[11px] font-black uppercase text-white/20 tracking-[0.2em]">
+                                                    <tr>
+                                                        <th className="px-8 py-2">Ubicación y Lotes</th>
+                                                        <th className="px-8 py-2">Chofer</th>
+                                                        <th className="px-8 py-2 text-right">Superficie</th>
+                                                        <th className="px-8 py-2 text-right">Finanzas</th>
+                                                        <th className="px-8 py-2 text-center">Remito</th>
+                                                        <th className="px-8 py-2 text-center">Cobro Emp.</th>
+                                                        <th className="px-8 py-2 text-center">Pago Cho.</th>
+                                                        <th className="px-8 py-2"></th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {t.trabajos?.filter(x => x.empresa.toLowerCase().includes(filtroEmpresa.toLowerCase()) && x.chofer.toLowerCase().includes(filtroChofer.toLowerCase())).map(tr => (
+                                                        <tr key={tr.id} className="glass-panel hover:bg-white/5 transicion group shadow-xl">
+                                                            <td className="px-8 py-6 rounded-l-[2.5rem]">
+                                                                <div className="font-black text-orange-500 uppercase text-lg leading-none mb-1">{tr.empresa}</div>
+                                                                <div className="text-xs font-bold text-white/60 mb-1">{tr.campo}</div>
+                                                                <div className="text-[10px] bg-white/5 px-3 py-1 rounded-full border border-white/5 inline-block italic text-white/40">Lotes: {tr.lote}</div>
+                                                            </td>
+                                                            <td className="px-8 py-6">
+                                                                <div className="font-black uppercase text-white/80">{tr.chofer}</div>
+                                                                <div className="text-[9px] font-bold text-white/20 uppercase tracking-widest">{tr.fecha}</div>
+                                                            </td>
+                                                            <td className="px-8 py-6 text-right font-black text-2xl tracking-tighter">
+                                                                {tr.hectareas} <span className="text-xs text-white/20">Has</span>
+                                                            </td>
+                                                            <td className="px-8 py-6 text-right">
+                                                                <div className="font-black text-white text-lg">${tr.totalFinal.toLocaleString()}</div>
+                                                                <div className="text-[10px] text-blue-400 font-bold italic tracking-tighter">Neto: ${tr.importeNeto.toLocaleString()}</div>
+                                                            </td>
+                                                            <td className="px-8 py-6 text-center">
+                                                                {tr.remito ? (
+                                                                    <a href={tr.remito} target="_blank" className="bg-orange-600/20 text-orange-500 p-4 rounded-2xl hover:bg-orange-600 hover:text-white transicion inline-block shadow-lg">
+                                                                        <i className="fas fa-file-invoice text-xl"></i>
+                                                                    </a>
+                                                                ) : (
+                                                                    <label className="cursor-pointer text-white/10 hover:text-orange-500 transicion p-4 inline-block">
+                                                                        <i className="fas fa-camera text-3xl"></i>
+                                                                        <input type="file" className="hidden" accept="image/*" onChange={e => manejarRemito(e, t.id, tr.id)} />
+                                                                    </label>
+                                                                )}
+                                                            </td>
+                                                            <td className="px-8 py-6 text-center">
+                                                                <button onClick={() => toggleEstado(t.id, tr.id, 'cobrado')} 
+                                                                    className={`w-14 h-14 rounded-2xl border-2 transicion flex items-center justify-center mx-auto ${tr.cobrado ? 'bg-green-600 border-green-400 text-white shadow-[0_0_20px_rgba(34,197,94,0.3)]' : 'border-white/10 text-white/5 hover:border-white/20'}`}>
+                                                                    <i className="fas fa-check text-xl"></i>
+                                                                </button>
+                                                            </td>
+                                                            <td className="px-8 py-6 text-center">
+                                                                <button onClick={() => toggleEstado(t.id, tr.id, 'pagadoAChofer')} 
+                                                                    className={`w-14 h-14 rounded-2xl border-2 transicion flex items-center justify-center mx-auto ${tr.pagadoAChofer ? 'bg-blue-600 border-blue-400 text-white shadow-[0_0_20px_rgba(37,99,235,0.3)]' : 'border-white/10 text-white/5 hover:border-white/20'}`}>
+                                                                    <i className="fas fa-check text-xl"></i>
+                                                                </button>
+                                                            </td>
+                                                            <td className="px-8 py-6 rounded-r-[2.5rem] text-right">
+                                                                <button onClick={async() => { if(confirm('¿Borrar?')) { 
+                                                                    const n = t.trabajos.filter(x => x.id !== tr.id); 
+                                                                    await db.collection('temporadas').doc(t.id).update({ trabajos: n }); 
+                                                                }}} className="text-white/5 hover:text-red-500 opacity-0 group-hover:opacity-100 transicion p-3"><i className="fas fa-trash-alt"></i></button>
+                                                            </td>
+                                                        </tr>
                                                     ))}
-                                                    <div className="flex flex-col">
-                                                        <label className="text-[9px] font-black text-white/20 uppercase ml-3 mb-2 tracking-widest">Has</label>
-                                                        <input type="number" className="w-full p-4 rounded-2xl font-bold text-sm outline-none shadow-inner"
-                                                            value={nuevoTrabajo.hectareas} onChange={(e) => setNuevoTrabajo({...nuevoTrabajo, hectareas: e.target.value})} />
-                                                    </div>
-                                                    <div className="flex flex-col">
-                                                        <label className="text-[9px] font-black text-white/20 uppercase ml-3 mb-2 tracking-widest">$ Ha</label>
-                                                        <input type="number" className="w-full p-4 rounded-2xl font-bold text-sm outline-none shadow-inner"
-                                                            value={nuevoTrabajo.precioHectarea} onChange={(e) => setNuevoTrabajo({...nuevoTrabajo, precioHectarea: e.target.value})} />
-                                                    </div>
-                                                    <div className="flex flex-col">
-                                                        <label className="text-[9px] font-black text-blue-400 uppercase ml-3 mb-2 tracking-widest italic">IVA %</label>
-                                                        <input type="number" className="w-full p-4 rounded-2xl font-bold text-sm outline-none bg-blue-50/90 shadow-inner"
-                                                            value={nuevoTrabajo.ivaPorcentaje} onChange={(e) => setNuevoTrabajo({...nuevoTrabajo, ivaPorcentaje: e.target.value})} />
-                                                    </div>
-                                                    <div className="flex items-end">
-                                                        <button onClick={() => agregarTrabajo(temp.id)} className="w-full bg-orange-600 text-white font-black py-4 rounded-2xl hover:bg-orange-500 shadow-xl shadow-orange-900/40 active:scale-95 transition-all uppercase text-[11px] tracking-widest mb-0">Guardar</button>
-                                                    </div>
-                                                </div>
-                                            </div>
-
-                                            {/* TABLAS GRUPALES DINÁMICAS */}
-                                            <div className="space-y-12">
-                                                {gruposFiltrados.map((g, idx) => (
-                                                    <div key={idx} className="bg-black/40 rounded-[3rem] border border-white/10 overflow-hidden shadow-2xl animate-in fade-in duration-700">
-                                                        <div className="bg-gradient-to-r from-white/5 to-transparent p-8 flex flex-col md:flex-row justify-between items-center border-b border-white/5 gap-4">
-                                                            <div className="flex items-center gap-4">
-                                                                <div className="w-12 h-12 bg-orange-600/20 rounded-2xl flex items-center justify-center border border-orange-500/30 text-orange-500"><Icon name="fas fa-map-marked-alt" /></div>
-                                                                <div>
-                                                                    <span className="text-xl font-black uppercase tracking-tighter block leading-none">{g.empresa}</span>
-                                                                    <span className="text-[10px] font-bold text-white/30 uppercase tracking-[0.3em]">{g.campo}</span>
-                                                                </div>
-                                                            </div>
-                                                            <div className="flex gap-8">
-                                                                <div className="text-center">
-                                                                    <span className="block text-[9px] font-black text-white/20 uppercase tracking-widest mb-1">Total Superficie</span>
-                                                                    <span className="text-lg font-black text-white">{g.totalHectareas.toLocaleString()} Has</span>
-                                                                </div>
-                                                                <div className="text-center">
-                                                                    <span className="block text-[9px] font-black text-white/20 uppercase tracking-widest mb-1 text-orange-500">Total Facturado</span>
-                                                                    <span className="text-lg font-black text-orange-500">${g.totalFacturado.toLocaleString()}</span>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-
-                                                        <div className="overflow-x-auto custom-scrollbar">
-                                                            <table className="w-full text-xs">
-                                                                <thead className="bg-white/5 text-[10px] font-black text-white/20 uppercase tracking-[0.2em]">
-                                                                    <tr>
-                                                                        <th className="p-6 text-left">Chofer & Fecha</th>
-                                                                        <th className="p-6 text-left">Lote</th>
-                                                                        <th className="p-6 text-right">Superficie</th>
-                                                                        <th className="p-6 text-right">Finanzas</th>
-                                                                        <th className="p-6 text-center">Remito</th>
-                                                                        <th className="p-6 text-center">Empresa</th>
-                                                                        <th className="p-6 text-center">Chofer</th>
-                                                                        <th className="p-6 text-right">Acción</th>
-                                                                    </tr>
-                                                                </thead>
-                                                                <tbody className="divide-y divide-white/5">
-                                                                    {g.items.map(tr => (
-                                                                        <tr key={tr.id} className="hover:bg-white/5 transition-colors group">
-                                                                            <td className="p-6">
-                                                                                <div className="font-black text-orange-500 uppercase text-sm mb-1">{tr.chofer}</div>
-                                                                                <div className="text-[10px] text-white/20 font-bold uppercase">{tr.fecha}</div>
-                                                                            </td>
-                                                                            <td className="p-6 font-bold uppercase text-white/70">{tr.lote}</td>
-                                                                            <td className="p-6 text-right font-black text-white/90">{tr.hectareas} Has</td>
-                                                                            <td className="p-6 text-right">
-                                                                                <div className="font-black text-white text-sm">${tr.totalFinal.toLocaleString()}</div>
-                                                                                <div className="text-[9px] text-blue-400 font-bold italic">IVA: ${tr.ivaValor.toLocaleString()}</div>
-                                                                            </td>
-                                                                            <td className="p-6 text-center">
-                                                                                {tr.remito ? (
-                                                                                    <a href={tr.remito} target="_blank" className="bg-orange-600/20 text-orange-500 p-3 rounded-xl hover:bg-orange-600 hover:text-white transition-all inline-block shadow-lg"><Icon name="fas fa-receipt text-lg" /></a>
-                                                                                ) : (
-                                                                                    <label className="cursor-pointer text-white/10 hover:text-orange-500 transicion-suave block p-2">
-                                                                                        <Icon name="fas fa-camera text-2xl" />
-                                                                                        <input type="file" className="hidden" accept="image/*" onChange={(e) => manejarRemito(e, temp.id, tr.id)} />
-                                                                                    </label>
-                                                                                )}
-                                                                            </td>
-                                                                            <td className="p-6 text-center">
-                                                                                <button onClick={() => toggleEstado(temp.id, tr.id, 'cobradoAEmpresa')} 
-                                                                                    className={`w-12 h-12 rounded-2xl border-2 transition-all flex items-center justify-center mx-auto ${tr.cobradoAEmpresa ? 'bg-green-600 border-green-400 shadow-[0_0_15px_rgba(22,163,74,0.4)] text-white' : 'border-white/5 text-white/5 hover:border-white/20'}`}>
-                                                                                    <Icon name="fas fa-check" />
-                                                                                </button>
-                                                                            </td>
-                                                                            <td className="p-6 text-center">
-                                                                                <button onClick={() => toggleEstado(temp.id, tr.id, 'pagadoAChofer')} 
-                                                                                    className={`w-12 h-12 rounded-2xl border-2 transition-all flex items-center justify-center mx-auto ${tr.pagadoAChofer ? 'bg-blue-600 border-blue-400 shadow-[0_0_15px_rgba(37,99,235,0.4)] text-white' : 'border-white/5 text-white/5 hover:border-white/20'}`}>
-                                                                                    <Icon name="fas fa-check" />
-                                                                                </button>
-                                                                            </td>
-                                                                            <td className="p-6 text-right">
-                                                                                <button onClick={() => eliminarTrabajo(temp.id, tr.id)} className="text-white/5 hover:text-red-500 transicion-suave p-3 opacity-0 group-hover:opacity-100"><Icon name="fas fa-trash-alt"/></button>
-                                                                            </td>
-                                                                        </tr>
-                                                                    ))}
-                                                                </tbody>
-                                                            </table>
-                                                        </div>
-
-                                                        {/* RESUMEN DE LIQUIDACIÓN - EL CORAZÓN DEL CÁLCULO */}
-                                                        <div className="bg-gradient-to-r from-orange-600/20 to-orange-900/20 p-10 flex flex-col lg:flex-row justify-between items-center gap-8 border-t border-white/5">
-                                                            <div className="flex items-center gap-6">
-                                                                <div className="w-16 h-16 bg-orange-600 rounded-[1.5rem] flex items-center justify-center shadow-2xl shadow-orange-900/50"><Icon name="fas fa-wallet text-2xl text-white" /></div>
-                                                                <div>
-                                                                    <p className="text-[11px] font-black uppercase text-orange-500 tracking-[0.2em] mb-1">Liquidación para Chofer</p>
-                                                                    <p className="text-xs font-bold text-white/40 italic leading-tight">Basado en el {porcentajeChofer}% del importe neto acumulado<br/>en este grupo de lotes.</p>
-                                                                </div>
-                                                            </div>
-                                                            <div className="text-center lg:text-right bg-black/30 px-10 py-6 rounded-3xl border border-white/5 shadow-inner">
-                                                                <span className="block text-[10px] font-black uppercase text-white/20 tracking-widest mb-2">Total a Pagar</span>
-                                                                <span className="text-4xl font-black text-green-400 drop-shadow-[0_0_10px_rgba(74,222,128,0.3)] block">
-                                                                    ${(g.totalNetoParaChofer * (porcentajeChofer / 100)).toLocaleString()}
-                                                                </span>
-                                                                <span className="text-[9px] font-black text-white/10 uppercase tracking-tighter mt-2 block italic">Cálculo de sistema La Fulmigadora</span>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                ))}
-                                            </div>
+                                                </tbody>
+                                            </table>
                                         </div>
-                                    )}
-                                </div>
-                            ))}
-                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        ))}
                     </div>
                 </div>
             );
